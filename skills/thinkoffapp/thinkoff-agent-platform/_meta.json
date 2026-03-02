@@ -1,0 +1,11 @@
+{
+  "owner": "thinkoffapp",
+  "slug": "thinkoff-agent-platform",
+  "displayName": "ThinkOff Agent Platform",
+  "latest": {
+    "version": "1.0.3",
+    "publishedAt": 1772452482918,
+    "commit": null
+  },
+  "history": []
+}
