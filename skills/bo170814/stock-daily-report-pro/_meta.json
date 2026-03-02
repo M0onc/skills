@@ -3,9 +3,15 @@
   "slug": "stock-daily-report-pro",
   "displayName": "Stock Daily Report Pro",
   "latest": {
-    "version": "1.1.2",
-    "publishedAt": 1772444005487,
-    "commit": "https://github.com/openclaw/skills/commit/d236350dfb44c3ec3ab8eaec505373b1a0556a6e"
+    "version": "1.2.0",
+    "publishedAt": 1772444341005,
+    "commit": null
   },
-  "history": []
+  "history": [
+    {
+      "version": "1.1.2",
+      "publishedAt": 1772444005487,
+      "commit": "https://github.com/openclaw/skills/commit/d236350dfb44c3ec3ab8eaec505373b1a0556a6e"
+    }
+  ]
 }
