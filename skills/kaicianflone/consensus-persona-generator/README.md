@@ -21,6 +21,14 @@ High-quality governance needs diverse perspectives (security, reliability, ops, 
 - `personas[]` with initial reputation baselines (later updated by `consensus-persona-engine`)
 - board write reference for audit trail
 
+## Environment + state path
+
+This package reads state-path configuration from:
+- `CONSENSUS_STATE_FILE`
+- `CONSENSUS_STATE_ROOT`
+
+Use a dedicated non-privileged directory for state; do not point state paths at system or secrets directories.
+
 ## Quick start
 
 ```bash

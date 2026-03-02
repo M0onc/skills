@@ -1,7 +1,7 @@
 import crypto from 'node:crypto';
 import { generatePersonas } from './llm.mjs';
 import { validateInput } from './validate.mjs';
-import { getLatestPersonaSet, readBoardPolicy, writeArtifact, resolveStatePath } from 'consensus-guard-core/src/index.mjs';
+import { getLatestPersonaSet, readBoardPolicy, writeArtifact, resolveStatePath } from 'consensus-guard-core';
 
 const MAX_PERSONAS = 9;
 
@@ -71,7 +71,7 @@ export async function handler(input, opts = {}) {
       }
     };
   } catch (e) {
-    return err(board_id || '', 'PERSONA_GENERATOR_FAILED', e.message || 'unknown error', { statePath });
+    return err(board_id || '', 'PERSONA_GENERATOR_FAILED', e.message || 'unknown error');
   }
 }
 

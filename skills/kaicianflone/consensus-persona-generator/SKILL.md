@@ -1,10 +1,30 @@
 ---
 name: consensus-persona-generator
 description: Generate and persist reusable persona panels (persona_set artifacts) for consensus decision workflows. This skill initializes evaluator diversity for downstream guards; ongoing reputation updates are owned by consensus-persona-engine.
+version: 1.1.14
 homepage: https://github.com/kaicianflone/consensus-persona-generator
 source: https://github.com/kaicianflone/consensus-persona-generator
+upstream:
+  consensus-guard-core: https://github.com/kaicianflone/consensus-guard-core
+requires:
+  bins:
+    - node
+    - tsx
+  env:
+    - CONSENSUS_STATE_FILE
+    - CONSENSUS_STATE_ROOT
 metadata:
-  {"openclaw": {"requires": {"bins": ["node", "tsx"]}}}
+  openclaw:
+    requires:
+      bins:
+        - node
+        - tsx
+      env:
+        - CONSENSUS_STATE_FILE
+        - CONSENSUS_STATE_ROOT
+    install:
+      - kind: node
+        package: consensus-persona-generator
 ---
 
 # consensus-persona-generator
@@ -49,17 +69,21 @@ Stack position:
 ## Runtime, credentials, and network behavior
 
 - runtime binaries: `node`, `tsx`
-- network calls: none in the shipped deterministic/local generator path
-- conditional network behavior: if a run needs persona generation and your persona-generator backend uses an external LLM, that backend may perform outbound API calls
-- credentials: none required for the shipped deterministic/local generator path
-- optional credentials: if you replace `src/llm.mjs` with an external provider-backed implementation, that implementation may require provider API keys
+- network calls: none in shipped generator logic
+- environment config read by this package: `CONSENSUS_STATE_FILE`, `CONSENSUS_STATE_ROOT`
 - filesystem writes: board/state artifacts under the configured consensus state path
 
 ## Dependency trust model
 
-- `consensus-guard-core` and `consensus-persona-generator` are first-party consensus packages
+- `consensus-guard-core` is the first-party consensus runtime dependency for this package
 - versions are semver-pinned in `package.json` for reproducible installs
 - this skill does not request host-wide privileges and does not mutate other skills
+
+## Install
+
+```bash
+npm i consensus-persona-generator
+```
 
 ## Quick start
 
