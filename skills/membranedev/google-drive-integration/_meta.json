@@ -1,0 +1,11 @@
+{
+  "owner": "membranedev",
+  "slug": "google-drive-integration",
+  "displayName": "Google Drive",
+  "latest": {
+    "version": "1.0.3",
+    "publishedAt": 1772581762081,
+    "commit": null
+  },
+  "history": []
+}
