@@ -1,0 +1,11 @@
+{
+  "owner": "nissan",
+  "slug": "analyst-watchdog",
+  "displayName": "Analyst Watchdog",
+  "latest": {
+    "version": "1.0.0",
+    "publishedAt": 1772399016317,
+    "commit": null
+  },
+  "history": []
+}
