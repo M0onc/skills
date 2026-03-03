@@ -1,3 +1,0 @@
-This package intentionally contains only text files (SKILL.md + docs)
-to satisfy current ClawHub upload validator.
-Executable code is maintained in the GitHub repository/release linked in INSTALL.md.

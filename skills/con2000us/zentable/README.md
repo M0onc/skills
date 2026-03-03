@@ -1,44 +1,31 @@
-# ZenTable (Beta) - Runnable Bundle
+# ZenTable (Beta)
 
-This bundle includes runnable renderer code (not docs-only).
+ZenTable transforms messy table-like content into clean, decision-ready outputs for both mobile (Discord-first) and desktop viewing.
 
-## Included runtime files
+It supports:
+- text-based inputs (raw text tables, long agent explanations, structured JSON)
+- OCR-assisted extraction from screenshots and real-world photos (workflow-assisted)
+- CSS + PIL rendering
+- sorting / filtering / pagination / threshold highlighting
+- optional PNG + TXT dual output (`--both`)
 
-- `skills/zentable/table_renderer.py`
-- `scripts/zentable_render.py`
-- `scripts/zentable/` (render helpers)
-- `themes/` (CSS/PIL/text themes)
+## Notes
 
-## Prerequisites
+- ASCII output is beta/experimental.
+- Current validation is Discord-first.
+- Demo video is coming soon.
 
-- Python 3.10+
-- Google Chrome (for CSS rendering path)
-- Optional OCR stack for image extraction workflows
+## Release
 
-## Quick install
-
-From this bundle root:
-
-```bash
-python3 -m pip install -r requirements-css-api.txt
-```
-
-## Smoke test
-
-```bash
-echo '{"headers":["A","B"],"rows":[["1","2"]]}' \
-| python3 skills/zentable/table_renderer.py - /tmp/zt_smoke.png --theme minimal_ios_mobile --width 450
-
-ls -lh /tmp/zt_smoke.png
-```
-
-## Optional OCR/OpenVINO dependencies
-
-```bash
-python3 -m pip install -r requirements-openvino.txt
-```
+GitHub release:
+https://github.com/con2000us/zenTable/releases/tag/skillhub-zentable-beta-2026-03-01
 
 ## Support / Contact
 
 - GitHub Issues: https://github.com/con2000us/zenTable/issues
 - Maintainer: @con2000us (Discord)
+- Bug report checklist:
+  - input type (text / screenshot / photo / json)
+  - expected vs actual output
+  - platform (Discord/mobile/desktop)
+  - command/options used
