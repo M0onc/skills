@@ -11,6 +11,7 @@
  *   node skills-run.js --skill mindmap --key YOUR_KEY --title "口腔AI趋势" --content "主要数据..."
  *   node skills-run.js --skill slide   --key YOUR_KEY --title "年度汇报"   --content "销售数据..."
  *   node skills-run.js --skill quiz    --key YOUR_KEY --title "护理测验"   --content "护理规范..."
+ *   node skills-run.js --skill ops-chat --key YOUR_KEY --content "查询活跃用户排名"
  */
 
 const https = require('https');
@@ -35,6 +36,8 @@ const SKILL_INFO = {
     quiz: { name: '测验题目', estimatedTime: '1~2 分钟' },
     infographic: { name: '信息图', estimatedTime: '2~4 分钟' },
     audio: { name: '音频播客', estimatedTime: '3~6 分钟' },
+    video: { name: '视频', estimatedTime: '5~10 分钟' },
+    'ops-chat': { name: 'OPS 运营智能助理', estimatedTime: '即时 (内含大模型运算, 最长5分钟)' },
 };
 
 const ALLOWED_SKILLS = Object.keys(SKILL_INFO);
@@ -64,6 +67,12 @@ function request(url, options = {}) {
             });
         });
         req.on('error', reject);
+        if (options.timeout) {
+            req.setTimeout(options.timeout, () => {
+                req.destroy();
+                reject(new Error(`请求超时，超过 ${options.timeout / 1000}s`));
+            });
+        }
         if (options.body) req.write(options.body);
         req.end();
     });
@@ -159,6 +168,42 @@ async function pollTaskStatus(taskId, xgToken, skillName) {
     throw new Error(`轮询超时（超过 ${maxTimes} 分钟），请稍后通过 taskId 查询状态`);
 }
 
+// Step 2.B: 专门处理 ops-chat 新接口
+async function callOpsChat(userData, message, timeoutMs = 300000) {
+    if (!message) throw new Error('ops-chat 需要提供提问内容 (--content)');
+    console.log(`\n[Step 2] 请求 OPS 智能聊天 (自动最长等待 ${timeoutMs / 60000} 分钟)...`);
+
+    // 支持环境变量切换基础地址，默认本地3000端口
+    const baseUrl = process.env.OPS_API_BASE_URL || 'http://localhost:3000';
+    const url = `${baseUrl}/api/ops/ai-chat`;
+
+    const body = JSON.stringify({ message });
+
+    const res = await request(url, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'x-user-id': userData.userId,
+            'access-token': userData.xgToken,
+            'authorization': CONFIG.authorizationKey, // 透传权限
+        },
+        body,
+        timeout: timeoutMs
+    });
+
+    const data = res.json();
+    if (res.status >= 400 || data.error) {
+        throw new Error(`请求 OPS 服务器失败 [${res.status}]: ${data.error || JSON.stringify(data)}`);
+    }
+
+    console.log(`\n🎉 回答生成完毕：\n`);
+    console.log(data.reply);
+
+    if (data.historyCount !== undefined) {
+        console.log(`\n(当前记录历史上下文数: ${data.historyCount} 对)`);
+    }
+}
+
 // 主流程
 async function main() {
     const args = parseArgs();
@@ -189,8 +234,13 @@ async function main() {
 
     try {
         const userData = await getXgToken(args.key);
-        const taskId = await createTask(userData, args.skill, args.title, args.content, args.require);
-        await pollTaskStatus(taskId, userData.xgToken, info.name);
+
+        if (args.skill === 'ops-chat') {
+            await callOpsChat(userData, args.content || args.title);
+        } else {
+            const taskId = await createTask(userData, args.skill, args.title, args.content, args.require);
+            await pollTaskStatus(taskId, userData.xgToken, info.name);
+        }
     } catch (err) {
         console.error(`\n❌ 错误：${err.message}`);
         process.exit(1);
