@@ -3,9 +3,15 @@
   "slug": "myclaw-backup",
   "displayName": "MyClaw Backup — Powered by MyClaw.ai",
   "latest": {
-    "version": "1.6.2",
-    "publishedAt": 1772510230582,
-    "commit": "https://github.com/openclaw/skills/commit/311296d65556365ec947889bdef35cb5a96290c3"
+    "version": "1.7.0",
+    "publishedAt": 1772517770642,
+    "commit": null
   },
-  "history": []
+  "history": [
+    {
+      "version": "1.6.2",
+      "publishedAt": 1772510230582,
+      "commit": "https://github.com/openclaw/skills/commit/311296d65556365ec947889bdef35cb5a96290c3"
+    }
+  ]
 }
