@@ -1,12 +1,12 @@
 ---
 name: agent-to-agent-payments
-description: "Monetize your AI agent. Charge for API calls, services, or data. Accept payments autonomously — no human needed. Use when agent needs to: 'charge for my service', 'accept payment from another agent', 'monetize AI capabilities', 'create agent storefront', 'bill per API call', 'autonomous commerce', 'agent marketplace', 'AI agent payments', 'pay for AI services', 'agent-to-agent transactions', 'machine payments', 'agentic commerce'. Built on PayRam MCP — no KYC, no Stripe account needed, USDC/USDT/ETH/BTC on Base, Ethereum, Polygon, Tron, TON. TON micropayments ideal for Telegram-integrated agents."
+description: "Monetize your AI agent. Charge for API calls, services, or data. Accept payments autonomously — no human needed. Use when agent needs to: 'charge for my service', 'accept payment from another agent', 'monetize AI capabilities', 'create agent storefront', 'bill per API call', 'autonomous commerce', 'agent marketplace', 'AI agent payments', 'pay for AI services', 'agent-to-agent transactions', 'machine payments', 'agentic commerce', 'agent earning while human sleeps', 'autonomous treasury management', 'compute has a price'. Built on PayRam MCP — no KYC, no Stripe account needed, USDC/USDT/ETH/BTC on Base, Ethereum, Polygon, Tron, TON. TON micropayments ideal for Telegram-integrated agents."
 license: MIT
 metadata:
   author: PayRam
-  version: 1.1.1
+  version: 1.1.3
   category: payments
-  tags: [agent-payments, autonomous-commerce, monetize-agent, api-billing, agent-marketplace, USDC, agentic-payments, MCP, PayRam]
+  tags: [agent-payments, autonomous-commerce, agentic-commerce, monetize-agent, api-billing, agent-marketplace, USDC, agentic-payments, MCP, PayRam]
   homepage: https://payram.com
   github: https://github.com/PayRam/payram-helper-mcp-server
 ---
@@ -98,7 +98,10 @@ mcporter call payram.onboard_agent_setup
 **Recommended for agents:**
 - **TON micropayments**: ~$0.001 fees, 5s confirmations, Telegram integration
 - **Base L2 USDC**: ~$0.01 fees, 30s confirmations, most liquid
-- **Real example**: The Watering Hole marketplace runs on TON micropayments for agent-to-agent commerce
+- **Real examples**: 
+  - The Watering Hole marketplace runs on TON micropayments for agent-to-agent commerce
+  - PadUp Ventures + Unicity Labs bringing agentic commerce infrastructure to India (Feb 2026)
+  - AI Agent Store marketplace launched for discovering agent services
 
 ## Resources
 - **MCP Server**: https://mcp.payram.com
