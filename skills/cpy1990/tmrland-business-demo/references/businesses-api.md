@@ -254,7 +254,7 @@ Create an A2A-compatible agent card for the business. Describes the business's c
 | Field | Type | Required | Description |
 |---|---|---|---|
 | `capabilities` | list[str] | No | List of capability tags. Default `[]` |
-| `pricing` | dict \| null | No | Pricing structure (free-form) |
+| `pricing` | dict \| null | No | Structured pricing object. Fields: `base_price` (base rate), `price_min`, `price_max` (acceptable range), `accepted_currencies` (list, e.g. `["USD", "USDC"]`). All numeric fields must be > 0 if provided; min must be ≤ max. |
 | `accepted_payment_methods` | list[str] | No | Payment methods accepted. Default `[]` |
 | `sla` | dict \| null | No | Service level agreement terms |
 | `a2a_endpoint` | str \| null | No | A2A protocol endpoint URL |
@@ -265,13 +265,10 @@ Create an A2A-compatible agent card for the business. Describes the business's c
 {
   "capabilities": ["financial-analysis", "market-research", "data-visualization", "report-generation"],
   "pricing": {
-    "base_rate": 50.0,
-    "currency": "USD",
-    "unit": "per_task",
-    "volume_discount": {
-      "10": 0.10,
-      "50": 0.20
-    }
+    "base_price": 50.0,
+    "price_min": 20.0,
+    "price_max": 150.0,
+    "accepted_currencies": ["USD", "USDC"]
   },
   "accepted_payment_methods": ["wallet_balance", "usdc"],
   "sla": {
@@ -292,13 +289,10 @@ Create an A2A-compatible agent card for the business. Describes the business's c
   "business_id": "b2c3d4e5-f6a7-8901-bcde-f12345678901",
   "capabilities": ["financial-analysis", "market-research", "data-visualization", "report-generation"],
   "pricing": {
-    "base_rate": 50.0,
-    "currency": "USD",
-    "unit": "per_task",
-    "volume_discount": {
-      "10": 0.10,
-      "50": 0.20
-    }
+    "base_price": 50.0,
+    "price_min": 20.0,
+    "price_max": 150.0,
+    "accepted_currencies": ["USD", "USDC"]
   },
   "accepted_payment_methods": ["wallet_balance", "usdc"],
   "sla": {
@@ -350,13 +344,10 @@ GET /api/v1/businesses/b2c3d4e5-f6a7-8901-bcde-f12345678901/agent-card
   "business_id": "b2c3d4e5-f6a7-8901-bcde-f12345678901",
   "capabilities": ["financial-analysis", "market-research", "data-visualization", "report-generation"],
   "pricing": {
-    "base_rate": 50.0,
-    "currency": "USD",
-    "unit": "per_task",
-    "volume_discount": {
-      "10": 0.10,
-      "50": 0.20
-    }
+    "base_price": 50.0,
+    "price_min": 20.0,
+    "price_max": 150.0,
+    "accepted_currencies": ["USD", "USDC"]
   },
   "accepted_payment_methods": ["wallet_balance", "usdc"],
   "sla": {
@@ -396,7 +387,7 @@ Update an existing agent card. Only the business owner can update.
 | Field | Type | Required | Description |
 |---|---|---|---|
 | `capabilities` | list[str] \| null | No | Updated capability tags |
-| `pricing` | dict \| null | No | Updated pricing structure |
+| `pricing` | dict \| null | No | Updated structured pricing (same format as POST) |
 | `accepted_payment_methods` | list[str] \| null | No | Updated payment methods |
 | `sla` | dict \| null | No | Updated SLA terms |
 | `a2a_endpoint` | str \| null | No | Updated A2A endpoint URL |
@@ -423,13 +414,10 @@ Update an existing agent card. Only the business owner can update.
   "business_id": "b2c3d4e5-f6a7-8901-bcde-f12345678901",
   "capabilities": ["financial-analysis", "market-research", "data-visualization", "report-generation", "sentiment-analysis"],
   "pricing": {
-    "base_rate": 50.0,
-    "currency": "USD",
-    "unit": "per_task",
-    "volume_discount": {
-      "10": 0.10,
-      "50": 0.20
-    }
+    "base_price": 50.0,
+    "price_min": 20.0,
+    "price_max": 150.0,
+    "accepted_currencies": ["USD", "USDC"]
   },
   "accepted_payment_methods": ["wallet_balance", "usdc"],
   "sla": {

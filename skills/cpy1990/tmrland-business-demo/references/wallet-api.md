@@ -2,13 +2,13 @@
 
 Base URL: `/api/v1/wallet`
 
-Virtual escrow wallet for managing funds on TMR Land. Supports USD and USDC balances. Funds are frozen during active orders and released upon completion. No real payment gateway (MVP).
+All endpoints require authentication via Bearer token. Each user has a single wallet created automatically on registration.
 
 ---
 
 ## GET /api/v1/wallet
 
-Retrieve the authenticated user's wallet balance and status.
+Retrieve the current user's wallet balances.
 
 **Auth:** Required
 
@@ -25,31 +25,29 @@ Authorization: Bearer eyJhbGciOiJIUzI1NiIs...
 
 ### Response Example
 
+**Status: 200 OK**
+
 ```json
 {
-  "id": "44556677-8899-aabb-ccdd-eeff00112233",
+  "id": "b2c3d4e5-f6a7-8901-bcde-f12345678901",
   "user_id": "a1b2c3d4-e5f6-7890-abcd-ef1234567890",
-  "balance": 2450.00,
-  "frozen_balance": 300.00,
-  "currency": "USD",
-  "status": "active",
-  "created_at": "2026-02-27T10:30:00Z",
-  "updated_at": "2026-02-27T14:00:00Z"
+  "usd_balance": "2450.00",
+  "usdc_balance": "0.00",
+  "created_at": "2026-02-27T10:30:00Z"
 }
 ```
 
 ### Errors
 
-| Status | Code | Description |
+| Status | Detail | Condition |
 |---|---|---|
-| 401 | `not_authenticated` | Missing or invalid access token |
-| 404 | `wallet_not_found` | User does not have a wallet |
+| 401 | `"Not authenticated"` | Missing or invalid Bearer token |
 
 ---
 
 ## POST /api/v1/wallet/charge
 
-Add funds to the wallet. In the MVP this is a simulated deposit.
+Add funds to the wallet (simulated top-up for MVP).
 
 **Auth:** Required
 
@@ -57,39 +55,44 @@ Add funds to the wallet. In the MVP this is a simulated deposit.
 
 | Field | Type | Required | Description |
 |---|---|---|---|
-| `amount` | float | Yes | Amount to deposit, must be greater than 0 |
-| `currency` | str | No | Currency code. Default `"USD"` |
+| `amount` | Decimal | Yes | Amount to add, must be > 0 and <= 100,000 |
+| `currency` | str | No | Currency code, default `"USD"`. Accepted: `"USD"`, `"USDC"` |
 
 ### Request Example
 
 ```json
 {
-  "amount": 500.00,
+  "amount": "500.00",
   "currency": "USD"
 }
 ```
 
 ### Response Example
 
+**Status: 200 OK**
+
 ```json
 {
-  "id": "44556677-8899-aabb-ccdd-eeff00112233",
-  "user_id": "a1b2c3d4-e5f6-7890-abcd-ef1234567890",
-  "balance": 2950.00,
-  "frozen_balance": 300.00,
+  "id": "c3d4e5f6-a7b8-9012-cdef-123456789012",
+  "wallet_id": "b2c3d4e5-f6a7-8901-bcde-f12345678901",
+  "type": "charge",
+  "amount": "500.00",
   "currency": "USD",
-  "status": "active",
-  "created_at": "2026-02-27T10:30:00Z",
-  "updated_at": "2026-02-27T15:00:00Z"
+  "related_order_id": null,
+  "status": "completed",
+  "description": "Wallet top-up",
+  "created_at": "2026-02-27T11:00:00Z"
 }
 ```
 
 ### Errors
 
-| Status | Code | Description |
+| Status | Detail | Condition |
 |---|---|---|
-| 401 | `not_authenticated` | Missing or invalid access token |
-| 422 | `validation_error` | Amount must be greater than 0 |
+| 400 | `"Amount must be greater than 0"` | Non-positive amount |
+| 400 | `"Amount exceeds maximum limit"` | Amount > 100,000 |
+| 401 | `"Not authenticated"` | Missing or invalid Bearer token |
+| 422 | Pydantic validation array | Invalid amount or currency format |
 
 ---
 
@@ -103,46 +106,50 @@ Withdraw funds from the wallet. Businesses use this to cash out earnings.
 
 | Field | Type | Required | Description |
 |---|---|---|---|
-| `amount` | float | Yes | Amount to withdraw, must be greater than 0 |
-| `currency` | str | No | Currency code. Default `"USD"` |
+| `amount` | Decimal | Yes | Amount to withdraw, must be > 0 and <= 100,000 |
+| `currency` | str | No | Currency code, default `"USD"`. Accepted: `"USD"`, `"USDC"` |
 
 ### Request Example
 
 ```json
 {
-  "amount": 1000.00,
+  "amount": "1000.00",
   "currency": "USD"
 }
 ```
 
 ### Response Example
 
+**Status: 200 OK**
+
 ```json
 {
-  "id": "44556677-8899-aabb-ccdd-eeff00112233",
-  "user_id": "a1b2c3d4-e5f6-7890-abcd-ef1234567890",
-  "balance": 1950.00,
-  "frozen_balance": 300.00,
+  "id": "d4e5f6a7-b8c9-0123-defa-234567890123",
+  "wallet_id": "b2c3d4e5-f6a7-8901-bcde-f12345678901",
+  "type": "withdraw",
+  "amount": "1000.00",
   "currency": "USD",
-  "status": "active",
-  "created_at": "2026-02-27T10:30:00Z",
-  "updated_at": "2026-02-27T15:30:00Z"
+  "related_order_id": null,
+  "status": "completed",
+  "description": "Wallet withdrawal",
+  "created_at": "2026-02-27T15:30:00Z"
 }
 ```
 
 ### Errors
 
-| Status | Code | Description |
+| Status | Detail | Condition |
 |---|---|---|
-| 401 | `not_authenticated` | Missing or invalid access token |
-| 400 | `insufficient_balance` | Available balance (balance - frozen) is less than the withdrawal amount |
-| 422 | `validation_error` | Amount must be greater than 0 |
+| 400 | `"Insufficient balance"` | Available balance < requested amount |
+| 400 | `"Amount must be greater than 0"` | Non-positive amount |
+| 401 | `"Not authenticated"` | Missing or invalid Bearer token |
+| 422 | Pydantic validation array | Invalid amount or currency format |
 
 ---
 
 ## GET /api/v1/wallet/transactions
 
-List wallet transaction history.
+List wallet transactions with pagination.
 
 **Auth:** Required
 
@@ -150,64 +157,56 @@ List wallet transaction history.
 
 | Field | Type | Required | Description |
 |---|---|---|---|
-| `offset` | int | No | Pagination offset. Default `0` |
-| `limit` | int | No | Number of results. Default `20` |
+| `offset` | int | No | Pagination offset, default `0` |
+| `limit` | int | No | Items per page, default `20`, max `100` |
 
 ### Request Example
 
 ```
-GET /api/v1/wallet/transactions?offset=0&limit=5
+GET /api/v1/wallet/transactions?offset=0&limit=20
 Authorization: Bearer eyJhbGciOiJIUzI1NiIs...
 ```
 
 ### Response Example
+
+**Status: 200 OK**
 
 ```json
 {
   "items": [
     {
       "id": "aabb0011-2233-4455-6677-8899aabbccdd",
-      "wallet_id": "44556677-8899-aabb-ccdd-eeff00112233",
-      "type": "credit",
-      "amount": 135.00,
+      "wallet_id": "b2c3d4e5-f6a7-8901-bcde-f12345678901",
+      "type": "transfer_in",
+      "amount": "7600.00",
       "currency": "USD",
-      "description": "Order payout: 11223344-5566-7788-99aa-bbccddeeff00",
-      "reference_id": "11223344-5566-7788-99aa-bbccddeeff00",
-      "reference_type": "order",
+      "related_order_id": "11223344-5566-7788-99aa-bbccddeeff00",
+      "status": "completed",
+      "description": "Escrow release for order 11223344 (after 5% fee)",
       "created_at": "2026-03-01T16:30:00Z"
     },
     {
-      "id": "bbcc1122-3344-5566-7788-99aabbccddee",
-      "wallet_id": "44556677-8899-aabb-ccdd-eeff00112233",
-      "type": "freeze",
-      "amount": 150.00,
-      "currency": "USD",
-      "description": "Escrow freeze: order 22334455-6677-8899-aabb-ccddeeff0011",
-      "reference_id": "22334455-6677-8899-aabb-ccddeeff0011",
-      "reference_type": "order",
-      "created_at": "2026-02-28T09:00:00Z"
-    },
-    {
       "id": "ccdd2233-4455-6677-8899-aabbccddeeff",
-      "wallet_id": "44556677-8899-aabb-ccdd-eeff00112233",
-      "type": "deposit",
-      "amount": 500.00,
+      "wallet_id": "b2c3d4e5-f6a7-8901-bcde-f12345678901",
+      "type": "charge",
+      "amount": "500.00",
       "currency": "USD",
-      "description": "Manual deposit",
-      "reference_id": null,
-      "reference_type": null,
+      "related_order_id": null,
+      "status": "completed",
+      "description": "Wallet top-up",
       "created_at": "2026-02-27T15:00:00Z"
     }
   ],
-  "total": 3
+  "total": 2
 }
 ```
 
 ### Errors
 
-| Status | Code | Description |
+| Status | Detail | Condition |
 |---|---|---|
-| 401 | `not_authenticated` | Missing or invalid access token |
+| 401 | `"Not authenticated"` | Missing or invalid Bearer token |
+| 422 | Pydantic validation array | Invalid offset or limit value |
 
 ---
 
@@ -221,47 +220,48 @@ Submit KYC (Know Your Customer) verification information.
 
 | Field | Type | Required | Description |
 |---|---|---|---|
-| `full_name` | str | Yes | Legal full name |
-| `id_type` | str | Yes | ID document type (e.g., `"passport"`, `"national_id"`, `"driver_license"`) |
-| `id_number` | str | Yes | ID document number |
+| `full_name` | str | Yes | Legal full name, max 200 characters |
+| `id_type` | str | Yes | Identity document type (e.g. `"passport"`, `"id_card"`, `"driver_license"`), max 50 characters |
+| `id_number` | str | Yes | Identity document number, max 100 characters |
 
 ### Request Example
 
 ```json
 {
   "full_name": "张明",
-  "id_type": "national_id",
+  "id_type": "id_card",
   "id_number": "310101199001011234"
 }
 ```
 
 ### Response Example
 
+**Status: 200 OK**
+
 ```json
 {
-  "user_id": "a1b2c3d4-e5f6-7890-abcd-ef1234567890",
-  "full_name": "张明",
-  "id_type": "national_id",
-  "id_number": "310101****1234",
-  "status": "pending",
-  "submitted_at": "2026-02-27T10:30:00Z",
-  "verified_at": null
+  "kyc_status": "verified",
+  "kyc_data": {
+    "full_name": "张明",
+    "id_type": "id_card",
+    "id_number": "310101****1234"
+  }
 }
 ```
 
 ### Errors
 
-| Status | Code | Description |
+| Status | Detail | Condition |
 |---|---|---|
-| 401 | `not_authenticated` | Missing or invalid access token |
-| 409 | `kyc_already_submitted` | KYC verification has already been submitted |
-| 422 | `validation_error` | Missing required fields |
+| 400 | `"KYC already submitted"` | KYC data already exists for this user |
+| 401 | `"Not authenticated"` | Missing or invalid Bearer token |
+| 422 | Pydantic validation array | Missing or invalid fields |
 
 ---
 
 ## GET /api/v1/wallet/kyc
 
-Retrieve the current KYC verification status.
+Retrieve the current user's KYC status and masked data.
 
 **Auth:** Required
 
@@ -278,21 +278,22 @@ Authorization: Bearer eyJhbGciOiJIUzI1NiIs...
 
 ### Response Example
 
+**Status: 200 OK**
+
 ```json
 {
-  "user_id": "a1b2c3d4-e5f6-7890-abcd-ef1234567890",
-  "full_name": "张明",
-  "id_type": "national_id",
-  "id_number": "310101****1234",
-  "status": "verified",
-  "submitted_at": "2026-02-27T10:30:00Z",
-  "verified_at": "2026-02-27T12:00:00Z"
+  "kyc_status": "verified",
+  "kyc_data": {
+    "full_name": "张明",
+    "id_type": "id_card",
+    "id_number": "310101****1234"
+  }
 }
 ```
 
 ### Errors
 
-| Status | Code | Description |
+| Status | Detail | Condition |
 |---|---|---|
-| 401 | `not_authenticated` | Missing or invalid access token |
-| 404 | `kyc_not_found` | No KYC submission found for this user |
+| 401 | `"Not authenticated"` | Missing or invalid Bearer token |
+| 404 | `"KYC data not found"` | User has not submitted KYC |

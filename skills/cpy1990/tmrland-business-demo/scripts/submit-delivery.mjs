@@ -9,7 +9,7 @@ if (help || positional.length === 0 || (!named.notes && !named.url)) {
 
 const body = {};
 if (named.notes) body.delivery_notes = named.notes;
-if (named.url) body.deliverable_url = named.url;
+if (named.url) body.attachments = [{ type: "link", url: named.url }];
 
 const data = await tmrFetch("POST", `/orders/${positional[0]}/deliver`, body);
 console.log(`Delivery submitted for order ${positional[0]}`);

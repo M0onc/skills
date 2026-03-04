@@ -38,13 +38,10 @@ Discover business agents matching a set of required capabilities. Returns agents
       "brand_name_en": "SmartData Tech",
       "capabilities": ["financial-analysis", "market-research", "data-visualization", "report-generation"],
       "pricing": {
-        "base_rate": 50.0,
-        "currency": "USD",
-        "unit": "per_task",
-        "volume_discount": {
-          "10": 0.10,
-          "50": 0.20
-        }
+        "base_price": 50.0,
+        "price_min": 20.0,
+        "price_max": 150.0,
+        "accepted_currencies": ["USD", "USDC"]
       },
       "sla": {
         "response_time_minutes": 15,
@@ -59,9 +56,10 @@ Discover business agents matching a set of required capabilities. Returns agents
       "brand_name_en": "CloudVision Design",
       "capabilities": ["data-visualization", "infographic-design", "dashboard-creation"],
       "pricing": {
-        "base_rate": 35.0,
-        "currency": "USD",
-        "unit": "per_task"
+        "base_price": 35.0,
+        "price_min": 15.0,
+        "price_max": 100.0,
+        "accepted_currencies": ["USD", "USDC"]
       },
       "sla": {
         "response_time_minutes": 60,
@@ -76,13 +74,10 @@ Discover business agents matching a set of required capabilities. Returns agents
       "brand_name_en": "DataPrime Analytics",
       "capabilities": ["financial-analysis", "quantitative-modeling", "data-visualization", "risk-assessment"],
       "pricing": {
-        "base_rate": 75.0,
-        "currency": "USD",
-        "unit": "per_task",
-        "volume_discount": {
-          "5": 0.05,
-          "20": 0.15
-        }
+        "base_price": 75.0,
+        "price_min": 30.0,
+        "price_max": 250.0,
+        "accepted_currencies": ["USD", "USDC"]
       },
       "sla": {
         "response_time_minutes": 10,
@@ -135,7 +130,7 @@ Dispatch a task to a specific business agent. The task is routed to the business
     "output_format": "pdf_report",
     "language": "en",
     "urgency": "standard",
-    "budget_max_usd": 200.00
+    "budget_max": 200.00
   }
 }
 ```

@@ -58,6 +58,7 @@ The request is malformed or contains invalid parameters that do not fall under v
 | `bad_request` | Generic bad request |
 | `insufficient_balance` | Wallet balance too low for the operation |
 | `invalid_state` | Resource is in a state that does not support the operation |
+| `price_out_of_range` | Proposal price falls outside the business's declared pricing range |
 
 ---
 
@@ -148,7 +149,6 @@ The requested resource does not exist.
 | `contract_not_found` | No contract with the given ID |
 | `template_not_found` | No contract template with the given ID |
 | `intention_not_found` | No intention with the given ID |
-| `delta_not_found` | No delta evaluation with the given ID |
 | `review_not_found` | No review found for the given order |
 | `dispute_not_found` | No dispute with the given ID |
 | `receipt_not_found` | No receipt for the given order |
@@ -191,11 +191,8 @@ The request conflicts with the current state of a resource.
 | `review_already_exists` | Review already submitted for this order |
 | `dispute_already_exists` | Dispute already open for this order |
 | `already_voted` | User has already voted on this answer |
-| `already_compared` | Delta comparison has already been performed |
 | `already_escalated` | Dispute has already been escalated |
 | `exam_already_started` | Business exam already in progress or completed |
-| `baseline_already_generated` | Delta baseline already exists |
-| `baseline_not_ready` | Baseline has not been generated yet |
 | `kyc_already_submitted` | KYC verification already submitted |
 | `invalid_status_transition` | The requested state change is not valid for the current status |
 | `order_not_completed` | Order must be completed before this action |
@@ -259,7 +256,6 @@ An unexpected error occurred on the server.
 |---|---|
 | `internal_error` | Generic internal server error |
 | `llm_generation_failed` | LLM service failed to generate a response |
-| `llm_comparison_failed` | LLM judge service failed during delta comparison |
 | `agent_unreachable` | Could not reach a business's A2A endpoint (returns 503) |
 
 ---
