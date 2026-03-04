@@ -1,0 +1,11 @@
+{
+  "owner": "digidai",
+  "slug": "pm-agent",
+  "displayName": "Product Manager",
+  "latest": {
+    "version": "1.1.0",
+    "publishedAt": 1772555181756,
+    "commit": null
+  },
+  "history": []
+}
