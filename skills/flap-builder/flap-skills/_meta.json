@@ -1,0 +1,11 @@
+{
+  "owner": "flap-builder",
+  "slug": "flap-skills",
+  "displayName": "Flap Skills",
+  "latest": {
+    "version": "1.6.0",
+    "publishedAt": 1772655673586,
+    "commit": null
+  },
+  "history": []
+}
