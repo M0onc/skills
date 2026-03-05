@@ -1,0 +1,11 @@
+{
+  "owner": "googleworkspace-bot",
+  "slug": "gws-admin-reports",
+  "displayName": "Gws Admin Reports",
+  "latest": {
+    "version": "1.0.1",
+    "publishedAt": 1772665470067,
+    "commit": null
+  },
+  "history": []
+}
