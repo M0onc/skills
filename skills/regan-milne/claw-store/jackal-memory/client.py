@@ -3,12 +3,14 @@
 Jackal Memory client for AI agents.
 
 Usage:
-  python client.py keygen           — show/generate AES encryption key
-  python client.py walletgen        — generate Jackal wallet and register with API
-  python client.py wallet           — show current Jackal wallet address
+  python client.py keygen                 — show/generate AES encryption key
+  python client.py walletgen              — generate Jackal wallet and register with API
+  python client.py wallet                 — show current Jackal wallet address
   python client.py save <key> <content>
   python client.py load <key>
-  python client.py usage            — show storage quota usage
+  python client.py usage                  — show storage quota usage
+  python client.py list [prefix]          — list known saved keys from local manifest
+  python client.py manifest-export [path] — export local key manifest JSON
 
 Auth: reads JACKAL_MEMORY_API_KEY from environment.
 
@@ -30,8 +32,9 @@ import urllib.request
 
 BASE_URL = "https://web-production-5cce7.up.railway.app"
 
-_KEY_FILE    = pathlib.Path.home() / ".config" / "jackal-memory" / "key"
-_WALLET_FILE = pathlib.Path.home() / ".config" / "jackal-memory" / "jackal-mnemonic"
+_KEY_FILE      = pathlib.Path.home() / ".config" / "jackal-memory" / "key"
+_WALLET_FILE   = pathlib.Path.home() / ".config" / "jackal-memory" / "jackal-mnemonic"
+_MANIFEST_FILE = pathlib.Path.home() / ".config" / "jackal-memory" / "manifest.json"
 
 
 # ── Encryption (mandatory) ────────────────────────────────────────────────────
@@ -71,6 +74,36 @@ def _decrypt(ciphertext_b64: str) -> str:
     data = base64.b64decode(ciphertext_b64)
     nonce, ct = data[:12], data[12:]
     return AESGCM(key).decrypt(nonce, ct, None).decode()
+
+
+def _load_manifest() -> dict:
+    if not _MANIFEST_FILE.exists():
+        return {"entries": {}}
+    try:
+        data = json.loads(_MANIFEST_FILE.read_text())
+        if not isinstance(data, dict):
+            return {"entries": {}}
+        data.setdefault("entries", {})
+        return data
+    except Exception:
+        return {"entries": {}}
+
+
+def _save_manifest(manifest: dict) -> None:
+    _MANIFEST_FILE.parent.mkdir(parents=True, exist_ok=True)
+    _MANIFEST_FILE.write_text(json.dumps(manifest, indent=2, sort_keys=True))
+
+
+def _manifest_upsert(key: str, cid: str, plaintext: str) -> None:
+    from datetime import datetime, timezone
+    m = _load_manifest()
+    entries = m.setdefault("entries", {})
+    entries[key] = {
+        "cid": cid,
+        "updated_at": datetime.now(timezone.utc).isoformat(),
+        "bytes_plaintext": len(plaintext.encode("utf-8")),
+    }
+    _save_manifest(m)
 
 
 # ── Jackal wallet (BIP39/BIP44 — no extra dependencies) ──────────────────────
@@ -454,6 +487,7 @@ def cmd_save(key: str, content: str) -> None:
     _ensure_jackal_client()
     _ensure_wallet_registered()  # server provisions storage under user's own address
     cid = _jackal_upload(key, _encrypt(content))
+    _manifest_upsert(key, cid, content)
     print(f"Saved — key: {key}  cid: {cid}")
 
 
@@ -470,6 +504,33 @@ def cmd_usage() -> None:
     print(f"Storage: {used_mb:.1f} MB / {quota_mb:.0f} MB ({pct:.1f}% used)")
 
 
+def cmd_list(prefix: str | None = None) -> None:
+    m = _load_manifest()
+    entries = m.get("entries", {})
+    keys = sorted(entries.keys())
+    if prefix:
+        keys = [k for k in keys if k.startswith(prefix)]
+    if not keys:
+        print("No matching keys in local manifest.")
+        print(f"Manifest: {_MANIFEST_FILE}")
+        return
+    print(f"Known keys ({len(keys)}):")
+    for k in keys:
+        meta = entries.get(k, {})
+        print(f"- {k}  ({meta.get('updated_at', 'unknown')})")
+
+
+def cmd_manifest_export(out_path: str | None = None) -> None:
+    m = _load_manifest()
+    if out_path:
+        p = pathlib.Path(out_path).expanduser()
+        p.parent.mkdir(parents=True, exist_ok=True)
+        p.write_text(json.dumps(m, indent=2, sort_keys=True))
+        print(f"Exported manifest to: {p}")
+    else:
+        print(json.dumps(m, indent=2, sort_keys=True))
+
+
 # ── Entry point ───────────────────────────────────────────────────────────────
 
 def main() -> None:
@@ -484,7 +545,7 @@ def main() -> None:
         cmd_keygen()
     elif cmd == "walletgen" and len(args) == 1:
         cmd_walletgen()
-    elif cmd == "wallet" and len(args) == 1:
+    elif cmd == "wallet" and len(args) in (1, 2) and (len(args) == 1 or args[1] == "--show-mnemonic"):
         cmd_wallet()
     elif cmd == "save" and len(args) == 3:
         cmd_save(args[1], args[2])
@@ -492,6 +553,10 @@ def main() -> None:
         cmd_load(args[1])
     elif cmd == "usage" and len(args) == 1:
         cmd_usage()
+    elif cmd == "list" and len(args) in (1, 2):
+        cmd_list(args[1] if len(args) == 2 else None)
+    elif cmd == "manifest-export" and len(args) in (1, 2):
+        cmd_manifest_export(args[1] if len(args) == 2 else None)
     else:
         print(__doc__)
         sys.exit(1)

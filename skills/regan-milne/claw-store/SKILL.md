@@ -22,7 +22,7 @@ All content is encrypted client-side with AES-256-GCM before leaving your machin
 
 - **Homepage:** https://obsideo.io
 - **Source code:** https://github.com/Regan-Milne/jackal-memory
-- **Publisher:** Obsideo (reganmilne@gmail.com)
+- **Publisher:** Obsideo (obsideo.io@gmail.com)
 
 ## Setup
 
@@ -92,9 +92,21 @@ python {baseDir}/jackal-memory/client.py save <key> <content>
 python {baseDir}/jackal-memory/client.py usage
 ```
 
+**List known saved keys (local manifest):**
+```
+python {baseDir}/jackal-memory/client.py list
+python {baseDir}/jackal-memory/client.py list project-
+```
+
+**Export local key manifest for backup/migration:**
+```
+python {baseDir}/jackal-memory/client.py manifest-export ~/jackal-manifest.json
+```
+
 **Show/generate Jackal wallet:**
 ```
 python {baseDir}/jackal-memory/client.py wallet
+python {baseDir}/jackal-memory/client.py wallet --show-mnemonic
 python {baseDir}/jackal-memory/client.py walletgen
 ```
 
@@ -153,6 +165,11 @@ Back up the mnemonic:
 ```
 python {baseDir}/jackal-memory/client.py wallet
 ```
+
+For selective recovery after hardware loss, keep all three backups:
+1. `JACKAL_MEMORY_WALLET_MNEMONIC`
+2. `JACKAL_MEMORY_ENCRYPTION_KEY`
+3. local key manifest (`manifest-export`) so you can restore specific keys instead of guessing.
 
 ## Endpoint and storage transparency
 
