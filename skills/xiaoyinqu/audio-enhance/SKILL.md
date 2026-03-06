@@ -2,7 +2,7 @@
 name: audio-enhance
 tagline: "Enhance audio quality with AI"
 description: "Remove background noise, enhance clarity, and improve audio quality. Perfect for podcasts, videos, and calls. No API keys needed. $2 FREE credits to start. Pay-as-you-go via SkillBoss."
-version: "1.0.0"
+version: "1.0.1"
 author: "SkillBoss"
 homepage: "https://skillboss.co"
 support: "support@skillboss.co"
