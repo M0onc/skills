@@ -1,7 +1,7 @@
 ---
 name: bambu-studio-ai
 description: "Bambu Lab 3D printer control and automation. Activate when user mentions: printer status, 3D printing, slice, analyze model, generate 3D, AMS filament, print monitor, Bambu Lab, or any 3D printing task. Full pipeline: search → generate → analyze → colorize → slice → print → monitor. Supports all 9 Bambu Lab printers (A1 Mini, A1, P1S, P2S, X1C, X1E, H2C, H2S, H2D)."
-version: "0.22.5"
+version: "0.22.21"
 author: TieGaier
 metadata:
   openclaw:
@@ -60,7 +60,7 @@ env:
     description: "Cloud device ID (auto-detected)"
   - name: BAMBU_3D_PROVIDER
     required: false
-    description: "AI 3D gen provider: meshy, tripo, printpal, 3daistudio"
+    description: "AI 3D gen provider: meshy, tripo, printpal, 3daistudio, rodin"
   - name: BAMBU_3D_API_KEY
     required: false
     description: "API key for chosen 3D generation provider"
@@ -78,18 +78,22 @@ secrets:
     storage: ".secrets.json"
     description: "API key from chosen 3D generation provider"
 security:
-  no_credentials_shipped: true
+  no_credentials_shipped: true  # X.509 cert/key downloaded on demand, not shipped
   secrets_storage: ".secrets.json (chmod 600, git-ignored)"
   config_storage: "config.json (non-sensitive printer settings, git-ignored)"
-  token_cache: ".token_cache.json (cloud auth token, 24h TTL, git-ignored)"
+  token_cache: ".token_cache.json (cloud auth token, 90d TTL, git-ignored). User can delete to force re-auth."
   verify_code_file: ".verify_code (one-time cloud login code, git-ignored)"
   files_gitignored: [".secrets.json", "config.json", ".token_cache.json", ".verify_code"]
-  persistence: "Reads/writes config.json, .secrets.json, .token_cache.json, .verify_code locally. No remote data exfiltration."
+  persistence: "Reads config.json at startup, .secrets.json on demand (lazy, not at import). Writes .token_cache.json, .verify_code locally. No remote data exfiltration."
+  shipped_credentials: "NONE — no credentials, certificates, or keys are shipped or auto-downloaded."
+  x509_setup: "User provides authentication certificate during setup if they enable Developer Mode auto-print. Stored locally in references/*.pem (git-ignored, key chmod 600). Not shipped, not downloaded by code."
+  x509_scope: "Signs MQTT commands for LAN auto-print only. Requires user's own access code + same network."
   network_access:
     - "Bambu Lab Cloud API (bambulab.com) — printer control, cloud mode only"
     - "Bambu Lab MQTT (LAN) — printer control, local mode only"
     - "Meshy API (api.meshy.ai) — 3D generation, optional"
     - "Tripo3D API (api.tripo3d.ai) — 3D generation, optional"
+    - "Hyper3D Rodin API (hyperhuman.deemos.com) — 3D generation, optional (Business subscription)"
     - "Printpal API — 3D generation, optional"
     - "3D AI Studio API — 3D generation, optional"
     - "DuckDuckGo (via ddgs) — model search, optional"
@@ -174,11 +178,11 @@ User Confirms ("looks good" / "print it")
     │
     ▼
 Decision 2: Print Method
-    ├─ E: Auto Print (bambu.py print --confirmed)
+    ├─ E: Auto Print (Developer Mode only, not recommended)
     └─ F: Manual Print (user handles in Bambu Studio)
     │
     ▼
-Print Monitoring (auto print only, or on user request)
+Print Monitoring (both workflows, or on user request)
 ```
 
 ---
@@ -312,42 +316,80 @@ Auto-detects printer + nozzle. Quality: draft(0.24) / standard(0.20) / fine(0.12
 ⛔ NEVER auto-print. AI models frequently have errors analysis can't fully catch.
 
 4. Ask print method:
-   - Direct automatic printing → Workflow E
+   - Direct automatic printing → Workflow E (Developer Mode only, not recommended)
    - Manual in Bambu Studio → Workflow F
 
 ---
 
 ## Step 5: Print Execution (Decision Point 2)
 
-### Workflow E — Auto Print
+### Workflow E — Auto Print (Developer Mode only, not recommended)
+⚠️ Requires Developer Mode ON. Bambu Studio and Bambu Handy will disconnect.
 1. `bambu.py print model.3mf --confirmed`
 2. Confirm: "Print started!"
 3. → Monitoring
 
 ### Workflow F — Manual Print
 - Model already open in Bambu Studio
-- User adjusts settings and prints manually
-- Agent does NOT auto-print or auto-monitor
-- CAN monitor on request
+- User adjusts settings and prints manually from BS/Handy
+
+**Print detection — two methods:**
+
+1. **Active listen (after model handoff):** When agent opens a model in BS (Workflow B/C/D), immediately start a background MQTT listener (30 min window). If printer state changes to RUNNING → notify user and offer monitoring.
+   - Implementation: background `exec` running paho-mqtt subscribe loop, poll every 30s for state change
+   - Auto-stop after 30 min if no print detected
+   - On detection: "🖨️ I see you started printing [filename]! Want me to monitor with live updates and snapshots?"
+
+2. **Heartbeat fallback:** During regular heartbeats, check printer MQTT status. If RUNNING and not already monitoring → notify user.
+
+- If user accepts → Start Monitoring (Step 6)
 
 ---
 
 ## Step 6: Print Monitoring
 
-Trigger: Auto print (Workflow E) or user request. Requires LAN mode + consent.
+Trigger: Auto print (Workflow E), manual print (Workflow F), or user request. Requires LAN mode.
 
 ⚠️ Always ask: "Want me to monitor? Auto-pause on serious issues?"
 
+**Monitoring method:** Direct MQTT subscription via paho-mqtt (NOT bambulabs_api — it has SSL issues).
+Connect to `{printer_ip}:8883`, subscribe to `device/{serial}/report`, parse `print` messages.
+
+**Camera snapshots are MANDATORY during monitoring:**
+- Capture via RTSP: `bambu.py snapshot` (ffmpeg → rtsps://bblp:{code}@{ip}:322/streaming/live/1)
+- Send snapshot with EVERY progress update to user
+- Include snapshot in anomaly alerts
+
+**Default monitoring schedule (milestone-based, ~5 messages per print):**
+| Event | Trigger | Action |
+|---|---|---|
+| Print start | State → RUNNING | Notify + 📸 snapshot |
+| 25% progress | mc_percent ≥ 25 | Status + 📸 snapshot |
+| 50% progress | mc_percent ≥ 50 | Status + 📸 snapshot |
+| 75% progress | mc_percent ≥ 75 | Status + 📸 snapshot |
+| Print complete | State → FINISH/IDLE | Completion + 📸 final snapshot |
+| Anomaly | Any time | Immediate alert + 📸 snapshot + auto-pause (if enabled) |
+
+User can adjust frequency. Track reported milestones to avoid duplicates.
+
+**Anomaly detection:**
 | Anomaly | Severity | Action |
 |---|---|---|
-| Progress stall >10min | Warning | Alert user |
-| Temperature anomaly | Critical | Alert + auto-pause |
-| Print failure/error | Critical | Alert + auto-pause |
-| Unexpected pause | Warning | Alert user |
-| Bed detachment | Critical | Auto-pause + alert |
-| Spaghetti | Critical | Auto-pause + alert |
+| Progress stall >10min | Warning | Alert user + snapshot |
+| Temperature anomaly | Critical | Alert + snapshot + auto-pause |
+| Print failure/error | Critical | Alert + snapshot + auto-pause |
+| Unexpected pause | Warning | Alert user + snapshot |
+| Bed detachment | Critical | Auto-pause + alert + snapshot |
+| Spaghetti | Critical | Auto-pause + alert + snapshot |
 
-Silent when normal. Progress summary every 30 min. Completion notification.
+**Status report format (send to user):**
+```
+🖨️ Print Update — {filename}
+📊 Progress: {percent}% | Layer {current}/{total}
+⏱️ Remaining: {time}
+🔥 Nozzle: {temp}°C | 🛏️ Bed: {temp}°C
+📸 [attached snapshot]
+```
 
 ---
 
@@ -357,11 +399,19 @@ Triggered when `config.json` doesn't exist. Conversational:
 
 1. **Printer model** — A1 Mini, A1, P1S, P2S, X1C, X1E, H2C, H2S, H2D
 2. **Connection** — LAN (recommended: IP + serial + access code) or Cloud (email + password, limited)
-3. **3D generation** (optional) — Meshy, Tripo, Printpal, 3D AI Studio + API key
-4. **Notifications** — auto / Discord / iMessage / Telegram / etc.
-5. **Save** — `config.json` + `.secrets.json` (chmod 600, git-ignored)
-6. **Verify** (ask permission) — test connection, camera, AMS
-7. **Summary**
+3. **Print mode** — MUST explain clearly to user:
+   - **Option A: Recommended (safe)** — Agent generates/slices model → opens in Bambu Studio → user reviews and prints manually. No special printer settings needed.
+   - **Option B: Full auto-print** — Agent controls printer directly (start/stop/monitor via MQTT). Requires:
+     - ⚠️ **Developer Mode ON** (printer touchscreen → Settings → LAN Only Mode → ON → Developer Mode → ON)
+     - ⚠️ Bambu Studio and Bambu Handy will **completely disconnect** (no cloud, no remote monitoring)
+     - ⚠️ Only LAN access (same network only)
+     - Agent still ALWAYS shows preview before printing (never auto-prints without user confirmation)
+   - Save choice as `print_mode: "manual"` or `print_mode: "auto"` in config.json
+4. **3D generation** (optional) — Meshy, Tripo, Printpal, 3D AI Studio + API key
+5. **Notifications** — auto / Discord / iMessage / Telegram / etc.
+6. **Save** — `config.json` + `.secrets.json` (chmod 600, git-ignored)
+7. **Verify** (ask permission) — test connection, camera, AMS
+8. **Summary**
 
 ---
 
@@ -369,7 +419,7 @@ Triggered when `config.json` doesn't exist. Conversational:
 
 **Required:** `python3`, `pip3`
 ```bash
-pip3 install bambulabs-api bambu-lab-cloud-api requests trimesh numpy Pillow ddgs
+pip3 install bambulabs-api bambu-lab-cloud-api requests trimesh numpy Pillow ddgs cryptography paho-mqtt
 ```
 **Optional:** `ffmpeg` (camera), Bambu Studio (preview/slicing), Blender 4.0+ (multi-color + HQ preview), OrcaSlicer (CLI slicing)
 
@@ -399,7 +449,7 @@ pip3 install bambulabs-api bambu-lab-cloud-api requests trimesh numpy Pillow ddg
 | Single-color pipeline | ✅ Stable |
 | Multi-color (colorize) | ✅ Auto-detect ≤8 colors, vertex-color OBJ → BS color merge dialog |
 | CLI slicing | ✅ OrcaSlicer backend (BS CLI SEGFAULT in v2.5.0) |
-| End-to-end auto-print | 🔜 Requires Bambu Studio preview step |
+| End-to-end auto-print | ✅ Works with Developer Mode ON (X.509 signed MQTT + FTP upload) |
 
 ---
 

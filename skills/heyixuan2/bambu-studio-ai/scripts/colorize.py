@@ -132,13 +132,10 @@ FAMILY_NAMES = ["black", "dark_gray", "light_gray", "white",
                 "red", "orange", "yellow", "green", "cyan", "blue", "purple", "pink"]
 
 # Families that exclude each other during greedy selection
+# Default: all 12 families are independent (no auto-merge)
+# User can request merging manually after seeing results
 FAMILY_GROUPS = {
-    0: [0, 1], 1: [0, 1],       # black ↔ dark_gray
-    2: [2, 3], 3: [2, 3],       # light_gray ↔ white
-    4: [4, 11], 11: [4, 11],    # red ↔ pink
-    # orange and yellow are independent (e.g. SpongeBob yellow body + brown pants)
-    7: [7, 8], 8: [7, 8],       # green ↔ cyan
-    9: [9, 10], 10: [9, 10],    # blue ↔ purple
+    # All families map to themselves only — no auto-exclusion
 }
 
 
@@ -215,8 +212,8 @@ def greedy_select_colors(pixels, pixel_lab, pixel_families, max_colors=8, min_pc
         if best_fid < 0 or best_count == 0:
             break
 
-        # Floor threshold: skip noise families (<0.1%)
-        if best_count / N < 0.001:
+        # Floor threshold: skip noise families below min_pct
+        if best_count / N < min_pct:
             break
 
 
@@ -538,7 +535,8 @@ def _snap_vertex_colors(obj_path, selected_colors):
                 lab = srgb_to_lab(rgb_reshaped)[0]
                 dist = np.sum((sel_lab - lab) ** 2, axis=1)
                 nearest = sel_rgb[np.argmin(dist)]
-                nearest = sel_rgb[np.argmin(dist)]
+                if not np.allclose(rgb, nearest, atol=0.01):
+                    snapped += 1
                 vline = "v %s %s %s %.4f %.4f %.4f\n" % (xyz[0], xyz[1], xyz[2], nearest[0], nearest[1], nearest[2])
                 lines_out.append(vline)
             else:
@@ -709,7 +707,7 @@ def colorize(input_path, output_path, max_colors=8, height=0, subdivide=1,
     labels = labels_2d.ravel()
     print(f"   Cleaned isolated patches + median smoothed")
 
-        # ── Step 5: Build quantized texture ──
+    # ── Step 5: Build quantized texture ──
     print(f"\n🖼️  Step 5: Quantized texture")
     quantized = build_quantized_texture(pixels, labels, selected, w, h)
 
