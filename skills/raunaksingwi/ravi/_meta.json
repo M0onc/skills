@@ -3,11 +3,16 @@
   "slug": "ravi",
   "displayName": "Ravi ravi",
   "latest": {
-    "version": "1.6.0",
-    "publishedAt": 1772282689856,
-    "commit": "https://github.com/openclaw/skills/commit/da1d2e92af4cdb5aaa7602c52ee9d014ec44fd01"
+    "version": "1.7.0",
+    "publishedAt": 1772783535081,
+    "commit": null
   },
   "history": [
+    {
+      "version": "1.6.0",
+      "publishedAt": 1772282689856,
+      "commit": "https://github.com/openclaw/skills/commit/da1d2e92af4cdb5aaa7602c52ee9d014ec44fd01"
+    },
     {
       "version": "1.5.1",
       "publishedAt": 1772201575112,
