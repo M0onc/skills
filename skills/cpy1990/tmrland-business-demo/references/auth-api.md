@@ -40,7 +40,7 @@ Register a new user account.
   "email": "business@smartdata.cn",
   "display_name": "张明",
   "avatar_url": null,
-  "role": "personal",
+  "role": "user",
   "is_active": true,
   "is_email_verified": false,
   "kyc_status": "none",
