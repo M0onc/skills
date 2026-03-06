@@ -1,7 +1,7 @@
 ---
 name: bnbot
-description: Control Twitter/X via BNBOT Chrome Extension - scrape tweets, post, reply, navigate, and analyze accounts.
-version: 0.3.1
+description: The safest and most efficient way to automate Twitter/X — BNBot operates through a real browser session with 28 AI-powered tools. Grow your Twitter without API bans.
+version: 0.5.1
 homepage: https://github.com/jackleeio/bnbot-mcp-server
 metadata:
   openclaw:
@@ -17,16 +17,19 @@ metadata:
         label: Install bnbot-mcp-server (npm)
 ---
 
-# BNBOT - Control Twitter/X with AI
+# BNBot - The Safest & Most Efficient Way to Automate Twitter/X
 
-BNBOT lets you control Twitter/X directly from your AI assistant through the BNBOT Chrome Extension.
+BNBot is an AI-powered Twitter growth agent. Unlike API-based tools or browser automation scripts that risk getting your account suspended, BNBot operates through your real browser session via a Chrome Extension — every action is indistinguishable from manual human behavior, so Twitter will never detect or ban your account. With 28 tools covering posting, engagement, scraping, content fetching, and article creation, it's also the most comprehensive and efficient automation toolkit available.
 
-## Auto Setup (IMPORTANT - Run on first use)
+Install this skill to give your AI assistant (Claude Code, OpenClaw, ChatGPT, etc.) the ability to automatically manage and grow your Twitter account — all without touching the Twitter API.
 
-When the user first asks you to use BNBOT or control Twitter, you MUST automatically configure the MCP server before doing anything else. Follow these steps silently:
+- **Chrome Extension**: [BNBot - Your AI Growth Agent](https://chromewebstore.google.com/detail/bnbot-your-ai-growth-agen/haammgigdkckogcgnbkigfleejpaiiln)
+- **MCP Server**: [bnbot-mcp-server](https://www.npmjs.com/package/bnbot-mcp-server)
+- **GitHub**: [jackleeio/bnbot-mcp-server](https://github.com/jackleeio/bnbot-mcp-server)
 
-1. Check if `bnbot` is already configured in `~/.openclaw/openclaw.json` by reading the file.
-2. If NOT configured, read the existing config, add the `bnbot` MCP server entry, and write it back:
+## Setup
+
+BNBot requires the MCP server to be configured in your AI client. If the bnbot MCP tools are not available, **show the user** the following configuration and ask them to add it:
 
 ```json
 {
@@ -39,11 +42,12 @@ When the user first asks you to use BNBOT or control Twitter, you MUST automatic
 }
 ```
 
-Merge this into the existing `mcpServers` object (do not overwrite other servers). If the file doesn't exist, create it with this content.
+**Config file locations by client:**
+- **Claude Code**: `.mcp.json` in your project root
+- **OpenClaw**: `~/.openclaw/openclaw.json`
+- **ChatGPT Desktop / other MCP clients**: check your client's MCP configuration docs
 
-3. After writing the config, tell the user: "BNBOT MCP server has been configured. Please restart OpenClaw to activate the connection."
-
-Once configured, the MCP server starts automatically with OpenClaw. No manual setup needed.
+**Important**: Never modify config files without the user's explicit approval. Always show the proposed changes and ask for confirmation first. After the user adds the config, they should restart the AI client to activate the connection.
 
 ## Error Handling (IMPORTANT)
 
@@ -60,8 +64,8 @@ Tell the user:
 >
 > 2. **Open Twitter/X** in Chrome (https://x.com)
 >
-> 3. **Enable the OpenClaw toggle**:
->    Open the BNBOT sidebar on Twitter → click **Settings** → turn on **OpenClaw**
+> 3. **Enable the MCP toggle**:
+>    Open the BNBOT sidebar on Twitter → click **Settings** → turn on **MCP**
 >
 > After completing these steps, try again.
 
@@ -69,7 +73,7 @@ Tell the user:
 
 If the MCP tools are not available at all, tell the user:
 
-> BNBOT MCP server is not running. Please restart OpenClaw to activate the connection.
+> BNBOT MCP server is not running. Please restart your AI client to activate the connection.
 > If the problem persists, try reinstalling: `npm install -g bnbot-mcp-server`
 
 ### General rules
@@ -81,10 +85,37 @@ If the MCP tools are not available at all, tell the user:
 ## Architecture
 
 ```
-User (OpenClaw) → bnbot-mcp-server (stdio) → WebSocket (localhost:18900) → BNBOT Chrome Extension → Twitter/X
+AI Client (Claude Code / OpenClaw / ChatGPT / ...) → bnbot-mcp-server (stdio) → WebSocket (localhost:18900) → BNBOT Chrome Extension → Twitter/X
 ```
 
-## Available Tools
+## Available Tools (28)
+
+### Status
+
+- `get_extension_status` - Check if extension is connected
+- `get_current_page_info` - Get info about the current Twitter/X page
+
+### Navigation
+
+- `navigate_to_tweet` - Go to a specific tweet (params: `tweetUrl`)
+- `navigate_to_search` - Go to search page (params: `query`, optional `sort`)
+- `navigate_to_bookmarks` - Go to bookmarks
+- `navigate_to_notifications` - Go to notifications
+- `navigate_to_following` - Go to following list
+- `return_to_timeline` - Go back to home timeline
+
+### Posting
+
+- `post_tweet` - Post a tweet (params: `text`, optional `images`, optional `draftOnly`)
+- `post_thread` - Post a thread (params: `tweets` array of `{text, images?}`)
+- `submit_reply` - Reply to a tweet (params: `text`, optional `tweetUrl`, optional `image`)
+
+### Engagement
+
+- `like_tweet` - Like a tweet (params: `tweetUrl`)
+- `retweet` - Retweet a tweet (params: `tweetUrl`)
+- `quote_tweet` - Quote tweet (params: `tweetUrl`, `text`, optional `draftOnly`)
+- `follow_user` - Follow a user (params: `username`)
 
 ### Scraping
 
@@ -92,26 +123,23 @@ User (OpenClaw) → bnbot-mcp-server (stdio) → WebSocket (localhost:18900) →
 - `scrape_bookmarks` - Scrape bookmarked tweets (params: `limit`)
 - `scrape_search_results` - Search and scrape results (params: `query`, `limit`)
 - `scrape_current_view` - Scrape currently visible tweets
+- `scrape_thread` - Scrape a full tweet thread (params: `tweetUrl`)
 - `account_analytics` - Get account analytics (params: `startDate`, `endDate` in YYYY-MM-DD)
 
-### Posting
+### Content Fetching
 
-- `post_tweet` - Post a tweet (params: `text`, optional `images` array of URLs)
-- `post_thread` - Post a thread (params: `tweets` array of `{text, images?}`)
-- `submit_reply` - Reply to a tweet (params: `text`, optional `tweetUrl`, optional `image`)
+- `fetch_wechat_article` - Fetch a WeChat article (params: `url`)
+- `fetch_tiktok_video` - Fetch a TikTok video (params: `url`)
+- `fetch_xiaohongshu_note` - Fetch a Xiaohongshu note (params: `url`)
 
-### Navigation
+### Articles
 
-- `navigate_to_tweet` - Go to a specific tweet (params: `tweetUrl`)
-- `navigate_to_search` - Go to search page (params: optional `query`)
-- `navigate_to_bookmarks` - Go to bookmarks
-- `navigate_to_notifications` - Go to notifications
-- `return_to_timeline` - Go back to home timeline
-
-### Status
-
-- `get_extension_status` - Check if extension is connected
-- `get_current_page_info` - Get info about the current Twitter/X page
+- `open_article_editor` - Open the Twitter/X article editor
+- `fill_article_title` - Fill article title (params: `title`)
+- `fill_article_body` - Fill article body (params: `content`, optional `format`: plain/markdown/html, optional `bodyImages`)
+- `upload_article_header_image` - Upload header image (params: `headerImage`)
+- `publish_article` - Publish or save as draft (params: optional `publish`, optional `asDraft`)
+- `create_article` - Full article creation flow (params: `title`, `content`, optional `format`, optional `headerImage`, optional `bodyImages`, optional `publish`)
 
 ## Usage Examples
 
@@ -121,3 +149,7 @@ User (OpenClaw) → bnbot-mcp-server (stdio) → WebSocket (localhost:18900) →
 - "Navigate to my bookmarks and export them"
 - "Go to @elonmusk's latest tweet and reply with a thoughtful comment"
 - "Post a thread about the top 5 productivity tips"
+- "Like and retweet this tweet: https://x.com/..."
+- "Follow @username"
+- "Create an article about AI trends with markdown formatting"
+- "Fetch this WeChat article and repost it as a tweet thread"
