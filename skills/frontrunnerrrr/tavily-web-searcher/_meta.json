@@ -3,9 +3,15 @@
   "slug": "tavily-web-searcher",
   "displayName": "Web Searchxxx",
   "latest": {
-    "version": "1.0.2",
-    "publishedAt": 1772532619094,
-    "commit": "https://github.com/openclaw/skills/commit/e6cb3f1499d0b2c89a4ea6043dc4293ce638a82c"
+    "version": "1.0.3",
+    "publishedAt": 1772698103236,
+    "commit": null
   },
-  "history": []
+  "history": [
+    {
+      "version": "1.0.2",
+      "publishedAt": 1772532619094,
+      "commit": "https://github.com/openclaw/skills/commit/e6cb3f1499d0b2c89a4ea6043dc4293ce638a82c"
+    }
+  ]
 }
