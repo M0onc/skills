@@ -1,0 +1,11 @@
+{
+  "owner": "membranedev",
+  "slug": "confluence-integration",
+  "displayName": "Confluence",
+  "latest": {
+    "version": "1.0.0",
+    "publishedAt": 1772603756133,
+    "commit": null
+  },
+  "history": []
+}
