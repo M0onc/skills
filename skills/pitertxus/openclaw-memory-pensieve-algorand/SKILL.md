@@ -1,56 +1,55 @@
 ---
-name: pensieve-algorand v2
-description: High-performance hybrid memory for OpenClaw with strict append-only capture, budgeted daily dream cycles, and optional Algorand anchoring through encrypted notes and external signing. Use when you need durable cross-session consistency with predictable runtime and low token overhead.
+name: openclaw-memory-pensieve-algorand-v2-1
+description: Operate the current Pensieve memory stack for OpenClaw with append-only local layers, hash-chain integrity, daily dream-cycle consolidation, encrypted Algorand anchoring of full content (events + semantic + procedural + self_model), and v2.1 post-anchor recoverability hardening checks. Use when implementing, running, auditing, or recovering this memory system.
 ---
 
-# OpenClaw Memory Pensieve v2
+# OpenClaw Memory Pensieve v2.1 (hardening)
 
-Use this skill to run memory in two lanes: ultra-fast capture and bounded consolidation.
+Run this workflow when the goal is reliable long-term memory with disaster recovery from blockchain anchors.
 
-## Core architecture
+## Workflow
 
-- Capture lane (hot path): `capture_event.py`
-  - O(1) append to `events.jsonl` + `ledger.jsonl`
-  - no LLM, no network, no summarization
-- Consolidation lane (cold path): `dream_cycle_budgeted.py`
-  - runs on schedule
-  - hard caps for scanned events and promotions
-- Anchoring lane (optional): encrypted Algorand note anchors with external signing
+1. Ensure memory layers exist in `memory/`.
+2. Capture important events into `events.jsonl` (append-only, hash-chained).
+3. Run daily dream cycle to promote stable patterns.
+4. Anchor daily memory to Algorand with encrypted notes (full content, multi-TX if needed).
+5. Run v2.1 hardening validator after anchoring.
+6. If recovery is needed, reconstruct and verify from on-chain notes.
 
-## Setup
+## Mandatory operational rules
 
-1. `scripts/init_memory_layers.py --root <workspace>/memory`
-2. Capture writes via:
-   - `scripts/capture_event.py --root <workspace>/memory --content "..." --tags a,b`
-3. Schedule daily consolidation:
-   - `scripts/dream_cycle_budgeted.py --root <workspace>/memory`
+- Keep all `*.jsonl` append-only. Never rewrite or delete lines.
+- Keep secrets local in `.secrets/` and never print them in chat.
+- Anchor encrypted payloads only (never plaintext memory).
+- Treat hardening failures as blocking for “recovery-fidelity” claims.
 
-## Daily performance pipeline
+## Runtime commands (current implementation)
 
-1. dream cycle (budgeted)
-2. build anchor payload
-3. build unsigned tx
-4. sign externally
-5. submit signed tx
-6. record tx map
-7. periodic fetch/decrypt/verify audit
+Use interpreter:
+- `/home/molty/.openclaw/workspace/.venv-algo/bin/python`
 
-## Required rules
+Bundled scripts in this skill (`scripts/`):
+- `auto_capture_daily.py`
+- `dream_cycle_daily.py`
+- `anchor_daily_algorand.py`
+- `read_anchor_latest.py`
+- `hardening_v21_validate.py`
+- `recover_from_blockchain.py`
+- `capture_from_logs.py`
 
-- Never rewrite `*.jsonl` history (append-only only).
-- Keep capture lane deterministic and minimal.
-- Keep dream-cycle bounded by explicit caps.
-- Anchor hashes/roots only; never plaintext memory on-chain.
+Main pipeline:
+- `scripts/auto_capture_daily.py`
+- `scripts/dream_cycle_daily.py`
+- `scripts/anchor_daily_algorand.py`
+- `scripts/read_anchor_latest.py`
+- `scripts/hardening_v21_validate.py`
 
-## Read order
+Recovery/debug:
+- `scripts/recover_from_blockchain.py`
+- `scripts/capture_from_logs.py`
 
-1. `self_model.jsonl`
-2. `procedural.jsonl`
-3. `semantic.jsonl`
-4. `events.jsonl` (time-bounded)
+## Read next
 
-## References
-
-- `references/architecture.md`
-- `references/operations.md`
-- `references/algorand.md`
+- `references/architecture.md` for layer model and guarantees.
+- `references/ops-runbook.md` for day-to-day run commands and outputs.
+- `references/hardening-v21.md` for strict post-anchor validation policy.

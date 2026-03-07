@@ -1,34 +1,43 @@
-# Architecture
+# Architecture (current v2.1)
 
-## Memory files
+## Memory layers
 
-Under `<workspace>/memory/`:
-- events.jsonl
-- semantic.jsonl
-- procedural.jsonl
-- self_model.jsonl
-- consolidation-log.jsonl
-- ledger.jsonl
-- onchain-anchors.jsonl
+- `memory/events.jsonl` — episodic raw entries
+- `memory/semantic.jsonl` — promoted stable facts
+- `memory/procedural.jsonl` — promoted workflows
+- `memory/self_model.jsonl` — promoted identity rules
+- `memory/consolidation-log.jsonl` — dream-cycle decisions
+- `memory/ledger.jsonl` — integrity receipts
+- `memory/onchain-anchors.jsonl` — local date/tx map for anchors
 
-## Why this structure
+## Integrity model
 
-- events = raw append-only history
-- semantic/procedural/self_model = consolidated, low-noise recall
-- ledger = integrity chain for every write
-- anchors = on-chain proof mapping
+For each appended event row:
+- `entry_hash = sha256(canonical_entry_without_hashes)`
+- `chain_hash = sha256(prev_hash + entry_hash)`
+- `prev_hash` links to prior chain tip
 
-## Integrity chain
+Guarantee: immutable append history + tamper-evident linkage.
 
-For each captured event:
-- entry_hash = sha256(canonical entry)
-- prev_hash = previous ledger chain_hash (or GENESIS)
-- chain_hash = sha256(prev_hash + entry_hash)
+## Consolidation model
 
-Append ledger receipt for every write.
+Dream cycle scans last 24h and promotes repeated patterns into semantic/procedural/self_model.
 
-## Performance model
+Important: promoted layers are abstractions and do not replace raw events.
 
-- Capture is always cheap and local.
-- Consolidation is scheduled and capped.
-- Anchoring is daily and idempotent.
+## Anchor model (v2)
+
+`anchor_daily_algorand.py` encrypts and writes daily payload to Algorand note(s):
+
+- encryption: AES-GCM
+- note prefix: `NXP2`
+- if payload fits note size => single TX
+- else => multi-TX chunked payload with per-chunk hash + full content hash
+
+Payload includes full content:
+- `events`
+- `semantic`
+- `procedural`
+- `self_model`
+
+This enables disaster recovery from blockchain + keys.
