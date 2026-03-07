@@ -1,0 +1,11 @@
+{
+  "owner": "shawnreality",
+  "slug": "qwen3-tts-feishu",
+  "displayName": "Qwen3-TTS + Feishu Voice",
+  "latest": {
+    "version": "1.0.3",
+    "publishedAt": 1772777182172,
+    "commit": null
+  },
+  "history": []
+}
