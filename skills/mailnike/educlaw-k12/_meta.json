@@ -3,9 +3,15 @@
   "slug": "educlaw-k12",
   "displayName": "EduClaw-k12 - AI-native education management for K-12, college, and university environments based on a ERPClaw",
   "latest": {
-    "version": "1.0.1",
-    "publishedAt": 1772824781337,
-    "commit": "https://github.com/openclaw/skills/commit/14d01847dac5acdb5cf62bdc2b211c0268865fd7"
+    "version": "1.0.2",
+    "publishedAt": 1772831631167,
+    "commit": null
   },
-  "history": []
+  "history": [
+    {
+      "version": "1.0.1",
+      "publishedAt": 1772824781337,
+      "commit": "https://github.com/openclaw/skills/commit/14d01847dac5acdb5cf62bdc2b211c0268865fd7"
+    }
+  ]
 }

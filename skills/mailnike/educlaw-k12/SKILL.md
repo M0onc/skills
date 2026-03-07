@@ -19,6 +19,16 @@ tables: 23
 
 Sub-vertical of EduClaw SIS. Adds K-12 specific workflows: behavioral incident tracking with IDEA MDR compliance, student health records with FERPA-compliant access logging, the complete IDEA Part B pipeline (referral → IEP → services → progress), Section 504 plans, and end-of-year grade promotion with batch advancement.
 
+## Security Model
+
+- **Local-only**: All data stored in `~/.openclaw/erpclaw/data.sqlite`
+- **Fully offline**: No external API calls, no telemetry, no cloud dependencies
+- **No credentials required**: Uses erpclaw_lib shared library (installed by erpclaw-setup)
+- **SQL injection safe**: All queries use parameterized statements
+- **FERPA compliant**: Health records, discipline records, and special education data access is logged
+- **IDEA compliance**: IEP goals and services are immutable; changes require new IEP version
+- **Immutable records**: Office visits, medication logs, immunizations, and promotion decisions cannot be modified after creation
+
 ## Quick Start
 
 ```bash
@@ -242,7 +252,7 @@ identify-at-risk-students (configurable GPA/attendance thresholds)
 - **Special education reads** (`get-sped-referral`, `get-active-iep`, `get-iep`, `record-sped-eligibility`, `get-active-504-plan`, `generate-iep-progress-report`) are logged with `data_category='special_education'`.
 - Emergency health access uses `is_emergency_access=1` in the FERPA log.
 
-**Note:** The `special_education` category requires the parent educlaw maintainers to add `'special_education'` to the `data_category` CHECK constraint in `educlaw_data_access_log`. See plan Section 1.
+The `special_education` data category is used for FERPA access logging of IEP and 504 plan records.
 
 ---
 
