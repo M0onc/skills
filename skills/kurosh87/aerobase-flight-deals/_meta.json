@@ -3,11 +3,16 @@
   "slug": "aerobase-flight-deals",
   "displayName": "Aerobase Flight Deals",
   "latest": {
-    "version": "1.2.0",
-    "publishedAt": 1772832877820,
-    "commit": "https://github.com/openclaw/skills/commit/3772ff649cf06ef40052792613543db7aaf399a5"
+    "version": "3.0.2",
+    "publishedAt": 1772858422690,
+    "commit": null
   },
   "history": [
+    {
+      "version": "1.2.0",
+      "publishedAt": 1772832877820,
+      "commit": "https://github.com/openclaw/skills/commit/3772ff649cf06ef40052792613543db7aaf399a5"
+    },
     {
       "version": "1.0.1",
       "publishedAt": 1772828878789,
