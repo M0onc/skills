@@ -1,11 +1,17 @@
 {
   "owner": "zt1314p-design",
   "slug": "tencentcloud-ocr-licenseplate",
-  "displayName": "tencentcloud-ocr-licenseplate",
+  "displayName": "TencentCloud LicensePlate OCR",
   "latest": {
-    "version": "1.0.0",
-    "publishedAt": 1772815800133,
-    "commit": "https://github.com/openclaw/skills/commit/456505abb1a1f037fbc4387988f722dd5edd8b6c"
+    "version": "1.0.1",
+    "publishedAt": 1772961182673,
+    "commit": null
   },
-  "history": []
+  "history": [
+    {
+      "version": "1.0.0",
+      "publishedAt": 1772815800133,
+      "commit": "https://github.com/openclaw/skills/commit/456505abb1a1f037fbc4387988f722dd5edd8b6c"
+    }
+  ]
 }
