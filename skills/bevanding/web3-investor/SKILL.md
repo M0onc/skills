@@ -51,6 +51,34 @@ python3 scripts/trading/trade_executor.py balances --network base
 # If error E010 → signer unavailable, stop and inform user
 ```
 
+### Rule 5: Check Payment Capability FIRST (NEW in v0.5.0)
+**Before asking user for transaction details, ALWAYS check execution readiness:**
+```
+❌ WRONG: Ask "How much do you want to invest?" without checking payment capability
+✅ CORRECT:
+   1. Run: python3 scripts/trading/preflight.py check --network <chain>
+   2. Inform user of available payment methods
+   3. Then ask for transaction details
+```
+
+**Preflight Check Output**:
+```json
+{
+  "recommended": "eip681_payment_link",
+  "methods": [
+    {"method": "keystore_signer", "status": "unavailable"},
+    {"method": "eip681_payment_link", "status": "available"}
+  ],
+  "message": "⚠️ No local signer. Use EIP-681 payment link."
+}
+```
+
+**Payment Method Flow**:
+| Recommended Method | Action |
+|-------------------|--------|
+| `keystore_signer` | Use `preview → approve → execute` flow |
+| `eip681_payment_link` | Generate EIP-681 link with `eip681_payment.py` |
+
 ---
 
 ## 🎯 Quick Start for Agents
@@ -154,6 +182,59 @@ web3-investor/
 
 ---
 
+## 🔍 Discovery Data Sources
+
+### Primary Data Sources
+
+| Source | Type | Use Case |
+|--------|------|----------|
+| **MCP (AntAlpha)** | Real-time yields | Primary source for DeFi opportunities |
+| **DefiLlama** | Protocol TVL/Yields | Fallback and cross-validation |
+| **Dune** | On-chain analytics | Custom queries, advanced analysis |
+
+### Dune MCP Integration
+
+Dune provides powerful on-chain analytics through MCP (Model Context Protocol). Use Dune for:
+- Custom on-chain data queries
+- Protocol-specific analytics
+- Historical trend analysis
+- Whale wallet tracking
+
+**Configuration** (`config/config.json`):
+```json
+{
+  "discovery": {
+    "data_sources": ["mcp", "dune", "defillama"],
+    "dune": {
+      "mcp_endpoint": "https://api.dune.com/mcp/v1",
+      "auth": {
+        "header": { "name": "x-dune-api-key", "env_var": "DUNE_API_KEY" },
+        "query_param": { "name": "api_key", "env_var": "DUNE_API_KEY" }
+      }
+    }
+  }
+}
+```
+
+**Environment Setup**:
+```bash
+# Required for Dune integration
+export DUNE_API_KEY="your_dune_api_key"
+```
+
+**Authentication Methods**:
+1. **Header Auth** (Recommended): `x-dune-api-key: <DUNE_API_KEY>`
+2. **Query Param**: `?api_key=<DUNE_API_KEY>`
+
+**Usage Example**:
+```bash
+# Query Dune for protocol analytics
+curl -H "x-dune-api-key: $DUNE_API_KEY" \
+  "https://api.dune.com/mcp/v1/query/<query_id>/results"
+```
+
+---
+
 ## ⚙️ Configuration
 
 ### Environment Variables
@@ -174,14 +255,28 @@ WEB3_INVESTOR_API_URL=http://localhost:3000/api
 ```json
 {
   "security": {
+    "max_trade_usd": 10000,
     "max_slippage_percent": 3.0,
-    "whitelist_chains": ["base", "ethereum"],
-    "whitelist_protocols": ["uniswap", "aave", "compound", "lido", "0x"],
+    "whitelist_enabled": false,
     "whitelist_tokens": ["USDC", "USDT", "DAI", "WETH", "ETH", "stETH", "rETH"],
-    "max_trade_value_usd": 10000
+    "whitelist_protocols": ["uniswap", "aave", "compound", "lido", "0x"],
+    "double_confirm": {
+      "enabled": true,
+      "large_trade_threshold_usd": 5000
+    }
   }
 }
 ```
+
+#### Whitelist Configuration
+
+| Parameter | Default | Description |
+|-----------|---------|-------------|
+| `whitelist_enabled` | `false` | Enable/disable whitelist filtering in trade execution |
+| `whitelist_tokens` | [...] | Allowed tokens for trading |
+| `whitelist_protocols` | [...] | Allowed protocols for interaction |
+
+**Note**: When `whitelist_enabled` is `false` (default), trade execution skips whitelist checks, allowing broader protocol/token access. Set to `true` to enforce strict whitelist validation.
 
 ### Whitelist Setup
 
