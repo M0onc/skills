@@ -1,7 +1,7 @@
 ---
 name: shll-run
 description: Execute DeFi transactions on BSC via SHLL AgentNFA. The AI handles all commands and users only need to chat.
-version: 6.0.4
+version: 6.0.5
 author: SHLL Team
 website: https://shll.run
 twitter: https://twitter.com/shllrun
@@ -196,8 +196,8 @@ export SHLL_RPC="https://your-private-bsc-rpc.example.com"
 - Recommend the listing with `recommended=true` by default unless the user explicitly wants a specialized template.
 - Run `shll-run setup-guide -l <listingId> -d <days>`.
 - Send `setupUrl` plus the wallet-role explanation.
-- Explicitly warn: do not use the operator wallet to mint, rent, or hold the Agent NFT.
-- Explicitly warn: use the owner wallet in the browser for rental or mint and for operator authorization.
+- Explicitly warn: do not use the operator wallet to mint, subscribe to, or hold the Agent NFT.
+- Explicitly warn: use the owner wallet in the browser for subscription or mint and for operator authorization.
 
 4. User returns with token ID:
 - Run `shll-run status -k <tokenId>`.
@@ -314,7 +314,7 @@ When the user provides a token address:
 2. `NOT authorized for token-id`
 - Operator wallet is not authorized; use setup guide or set operator in console.
 
-3. `rental has EXPIRED` or `operator authorization has EXPIRED`
+3. `subscription has EXPIRED` or `operator authorization has EXPIRED`
 - Renew subscription or authorization first.
 
 4. `status: error` with `errorCode: POLICY_REJECTED`
@@ -337,7 +337,7 @@ When the user provides a token address:
 1. Never describe `generate-wallet` as if it were the user's main wallet.
 2. Always call it the operator wallet or AI hot wallet.
 3. Always explain the dual-wallet model the first time setup is discussed.
-4. Always warn that the operator wallet must not be used to mint, rent, or hold the Agent NFT.
+4. Always warn that the operator wallet must not be used to mint, subscribe to, or hold the Agent NFT.
 5. Do not ask the user to manually set `RUNNER_PRIVATE_KEY` in OpenClaw; AI should do it.
 6. After setup is complete and the user provides a token-id, run readiness checks automatically before asking the user what to do next.
 7. When multiple listings are available, recommend one by default and explain why.
