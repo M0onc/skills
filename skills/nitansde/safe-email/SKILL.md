@@ -1,6 +1,47 @@
 ---
 name: safe-email
-description: Privacy-first email processing workflow for creating calendar events or reminders from forwarded emails via IMAP. Use when a user explicitly asks to process a newly forwarded email in a dedicated mailbox. Requires explicit user trigger, reads only the newest relevant message, and deletes processed email content afterward.
+description: Privacy-first workflow for processing explicitly forwarded emails via IMAP and creating calendar/reminder entries. Use only when the user explicitly asks to process the latest forwarded email in a dedicated mailbox. Requires IMAP credentials and a configured calendar/reminder integration; destructive deletion is opt-in and must be explicitly confirmed.
+metadata:
+  credentialsRequired:
+    - imap_username
+    - imap_app_password_or_oauth
+    - calendar_integration_credentials
+    - reminder_integration_credentials
+  envRequired:
+    - SAFE_EMAIL_IMAP_USERNAME
+    - SAFE_EMAIL_IMAP_APP_PASSWORD
+  secretSourcesAccepted:
+    - env
+    - os_keychain
+    - secure_config_ref
+    - oauth_token_store
+  openclaw:
+    requires:
+      bins: ["himalaya"]
+      credentials:
+        - imap_username
+        - imap_app_password_or_oauth
+        - calendar_integration_credentials
+        - reminder_integration_credentials
+      env:
+        - SAFE_EMAIL_IMAP_USERNAME
+        - SAFE_EMAIL_IMAP_APP_PASSWORD
+      secretSources:
+        - env
+        - os_keychain
+        - secure_config_ref
+        - oauth_token_store
+      recommendedSecretSource: os_keychain_or_secure_config_ref
+    capabilities:
+      - imap_read_latest_only
+      - calendar_write
+      - reminder_write
+      - email_delete_optional
+    compliance:
+      explicitTriggerRequired: true
+      autoPollingForbidden: true
+      destructiveActionsNeedConsent: true
+      forwardToDedicatedInboxRequired: true
 ---
 
 # Safe Email (Privacy-First)
@@ -10,6 +51,35 @@ Use this skill to process forwarded emails safely and convert actionable items i
 - reminders/tasks
 
 This skill is intentionally **conservative** and **opt-in only**.
+
+## Required access and credentials (must be declared to users)
+
+This workflow needs:
+1. **IMAP mailbox access** to a dedicated inbox (username + app password/OAuth)
+2. **Calendar write access** (any user-selected calendar system)
+3. **Reminder/task write access** (any user-selected reminder system)
+4. Optional **email deletion permission** (only if user enables post-processing deletion)
+
+If any of the above is missing, run in read/parse-only mode and ask user what to do next.
+
+## Required credentials and accepted secret sources
+
+Required credentials before first run:
+- IMAP username (dedicated inbox address)
+- IMAP app password or OAuth token
+- Calendar integration credential/config (provider-specific)
+- Reminder integration credential/config (provider-specific)
+
+Accepted secret sources:
+- Environment variables (example: `SAFE_EMAIL_IMAP_USERNAME`, `SAFE_EMAIL_IMAP_APP_PASSWORD`)
+- OS keychain / credential store
+- Secure config references (secret refs)
+- OAuth token store
+
+Policy:
+- Credentials are required; **source is flexible**.
+- Prefer OS keychain or secure config references over plaintext.
+- Never store plaintext secrets inside the skill package.
 
 ## What users must know first
 
@@ -33,11 +103,12 @@ This skill is intentionally **conservative** and **opt-in only**.
    - Read only what is needed.
    - Prefer the newest relevant message for the requested action.
 
-3. **Delete processed email content after successful handling**.
-   - Move to Trash and permanently expunge when possible.
-   - If permanent deletion fails, report status clearly and retry safely.
+3. **Destructive deletion is opt-in**.
+   - Do not delete by default.
+   - Delete only when user explicitly says to delete after processing (globally or per run).
 
-4. **Ask before destructive or ambiguous actions** (except agreed post-processing deletion rule).
+4. **Ask before ambiguous actions**.
+   - If the email content is unclear (time, timezone, destination system, duplicates), ask first.
 
 ## Setup guide (Gmail + IMAP)
 
@@ -104,12 +175,19 @@ If not explicitly asked: stop.
 Extract as available:
 - title/subject
 - date/time window
+- timezone (if absent, ask or use user's configured timezone and state assumption)
 - location
 - links
 - notes/details (e.g., confirmation number, participants)
 - action type (event vs reminder vs both)
 
 If date/time is missing or ambiguous, ask user before creating entries.
+
+### Step 2.5 — Safety checks before writing
+
+- Perform duplicate check against recent calendar/reminder entries (title + date/time proximity).
+- Present a concise write preview when confidence is low.
+- If confidence is high and user requested "auto-create", proceed and report exactly what was written.
 
 ### Step 3 — Create output in user’s preferred systems
 
@@ -120,31 +198,33 @@ Minimum expected output objects:
 - **Calendar event**: title, start, end/duration, timezone, location, notes
 - **Reminder/task**: title, due date/time (if known), notes, optional priority/list
 
-### Step 4 — Delete processed email content
+### Step 4 — Optional deletion of processed email content
 
-After successful creation:
+Only if user enabled deletion policy (global policy or explicit per-run consent):
 1. Move processed email to Trash
 2. Permanently delete/expunge when supported
 3. Confirm deletion status to user
+
+If deletion is not enabled, leave email untouched and confirm that no deletion was performed.
 
 ### Step 5 — Return concise confirmation
 
 Include:
 - what was created (event/reminder)
 - key parsed fields (time/location)
-- deletion status of processed email
+- whether deletion was performed (yes/no)
 - any unresolved ambiguity
 
 ## Failure handling
 
 - If parsing fails: provide extracted partial fields and request confirmation.
-- If calendar/reminder creation fails: do **not** delete email until user decides.
-- If deletion fails: clearly report “processed but not fully deleted yet,” then retry.
+- If calendar/reminder creation fails: do not delete email.
+- If deletion fails: clearly report “processed but not fully deleted yet,” then retry only with user consent.
 
 ## Default privacy posture
 
 - Explicit user trigger only
 - Minimum necessary access
 - No automatic surveillance behavior
-- Post-processing deletion by default
+- Deletion only with explicit consent
 - Clear user-visible audit summary each run
