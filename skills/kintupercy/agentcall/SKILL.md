@@ -87,7 +87,15 @@ Body: {
   "firstMessage": "Hi, I'd like to schedule an appointment please.",
   "maxDurationSecs": 600
 }
-Voices: alloy, ash, ballad, coral, echo, sage, shimmer, verse
+Voices (pick based on user's desired tone):
+- alloy: neutral, balanced (default)
+- ash: warm, conversational
+- ballad: expressive, melodic
+- coral: clear, professional
+- echo: resonant, deep
+- sage: calm, authoritative, confident
+- shimmer: bright, energetic
+- verse: smooth, articulate
 ```
 
 **List call history:**
@@ -150,12 +158,12 @@ All phone numbers must be E.164: `+{country code}{number}`, e.g. `+14155551234`
 
 ## Common Workflows
 
-### Signup with phone verification
-1. `POST /v1/numbers/provision` with `{ "type": "local" }` — get a number
-2. Enter the number into the signup form
+### Test your app's SMS verification (QA)
+1. `POST /v1/numbers/provision` with `{ "type": "local" }` — get a test number
+2. Enter the number into your staging app's verification form
 3. `GET /v1/sms/otp/:numberId?timeout=60000` — wait for the verification code
-4. Enter the code into the form
-5. `DELETE /v1/numbers/:id` — release when done
+4. Assert the code arrives and your app accepts it
+5. `DELETE /v1/numbers/:id` — release the test number
 
 ### AI voice call
 1. `POST /v1/numbers/provision` with `{ "type": "local" }` — get a number (if you don't have one)
