@@ -1,79 +1,96 @@
 ---
-name: aerobase-travel-hotels
+name: aerobase-hotels
 description: Hotel search with jetlag-friendly features, day-use availability, and price comparison
-metadata: {"openclaw": {"emoji": "🏨", "primaryEnv": "AEROBASE_API_KEY", "user-invocable": true, "homepage": "https://aerobase.app"}}
+metadata: {"openclaw": {"emoji": "🏨", "primaryEnv": "AEROBASE_API_KEY", "user-invocable": true}}
 ---
 
-# Aerobase Hotel Search 🏨
+# Hotel Booking & Layover Accommodation
 
-Find the perfect hotel for jetlag recovery. Aerobase.app recommends hotels based on your trip — not just price.
+Frame hotel recommendations in terms of recovery: "Your layover is 9 hours. An 8-minute shuttle
+to the Hilton gives you 5 hours of sleep at a time when your body clock says 2 AM — $89 for the
+room could save you a full day of jetlag on the next leg."
 
-**Why Aerobase?**
-- 😴 **Jetlag features** — Blackout curtains, gym, pool
-- 🌙 **Day-use rooms** — Perfect for long layovers
-- ✈️ **Near airports** — Quick transit times
-- 💰 **Best value** — Price + recovery combined
+## Search (v1 API - Preferred)
 
-## Individual Skill
+**GET /api/v1/hotels** — Search hotels with filters
+Query params: `airport`, `city`, `country`, `chain`, `tier`, `stars`, `jetlagFriendly`, `search`, `limit`, `offset`
+Returns: hotels with jetlagFeatures, amenities, pricing
 
-This is a standalone skill. **For EVERYTHING**, install the complete **Aerobase Travel Concierge** — all skills in one package:
+Example: `GET /api/v1/hotels?airport=JFK&jetlagFriendly=true`
 
-→ https://clawhub.ai/kurosh87/aerobase-travel-concierge
+## Search (Legacy)
 
-Includes: flights, hotels, lounges, awards, activities, deals, wallet + **PREMIUM recovery plans**
+**POST /api/hotels/search** — `{ destination, checkin, checkout, guests }`
+2. **RATES**: GET /api/hotels/rates/{hotelId} — rooms, cancellation policies, nightly rates
+3. **PREBOOK**: POST /api/hotels/prebook — validate rate, get prebookId (price may change!)
+4. **BOOK**: POST /api/hotels/book — `{ prebookId, guests, payment }` → confirmation
+5. **MANAGE**: GET /api/hotels/bookings, DELETE /api/hotels/bookings/{id}
 
-## What This Skill Does
+## Special
 
-- Search hotels at any destination
-- Filter by day-use, jetlag-friendly features
-- Show proximity to airports
-- Compare prices across providers
-- Recommend based on trip duration + jetlag
+- **GET /api/dayuse?airport={code}** — Day-use hotels for layover passengers (book by the day, no overnight stay)
+- **GET /api/hotels?dayuse=true** — Filter hotels to day-use only
+- **GET /api/hotels/near-airport/{code}** — airport-adjacent hotels
 
-## Example Conversations
+## Always
 
-```
-User: "Find hotels in Tokyo with day use for 8-hour layover"
-→ Shows day-use options near airports
-→ Highlights recovery-friendly features
-→ Compares prices
-
-User: "Just arrived from 12-hour flight - where should I stay?"
-→ Recommends hotels with recovery features
-→ Considers your jetlag state
-→ Factors in next day's schedule
-```
-
-## API Documentation
-
-Full API docs: https://aerobase.app/developers
-
-OpenAPI spec: https://aerobase.app/api/v1/openapi
-
-**GET /api/v1/hotels**
-
-Query params:
-- `city` or `airport` — destination
-- `checkin` / `checkout` — dates
-- `dayUse` — true for day-use only
-- `jetlagFriendly` — filter for recovery features
-
-Returns hotels with prices, amenities, jetlag scores.
+- Show cancellation policy before booking
+- Layovers > 8 hours: recommend day-use hotels
+- Consider jetlag recovery: blackout curtains, gym, pool for long-haul arrivals
 
 ## Rate Limits
 
-- **Free**: 5 requests/day
-- **Premium**: Unlimited + all skills + recovery plans
+- Search: max 20/hr. Rates: max 10/hr. Prebook: max 5/hr (holds inventory).
+- Book: max 2/hr (irreversible payment). Near-airport: max 10/hr.
 
-Get premium: https://aerobase.app/concierge/pricing
+## Data Sources — Hotels
 
-## Get Everything
+### Primary: LiteAPI (FREE, always query first)
+- Hit LiteAPI for availability, pricing, and property details FIRST
+- Returns structured JSON: property name, price, rating, amenities, photos
+- No rate limits concern at current usage
+- Response time: fast, no browser overhead
 
-**Install the complete package:**
+### Secondary: Browser (concurrent enrichment)
+Launch browser search IN PARALLEL with LiteAPI call for:
+- Visual verification of property (screenshots)
+- Reviews/ratings from Booking.com that LiteAPI may not include
+- Price comparison across OTAs (Booking.com vs Google Hotels vs LiteAPI)
+- Neighborhood context (Google Maps street view, nearby attractions)
 
-```bash
-clawhub install aerobase-travel-concierge
+### Workflow
+1. User asks "Find hotels in Tokyo for March 15-20"
+2. IMMEDIATELY fire two concurrent requests:
+   a. LiteAPI query (structured data, fast)
+   b. Browser → Booking.com search (visual enrichment, slower)
+3. Show LiteAPI results first (they arrive faster)
+4. Enrich with browser data as it arrives: "I also found these on Booking.com for comparison..."
+5. Highlight price differences: "LiteAPI shows $120/night, Booking.com has $135 for the same property"
+
+### Scrapling — Booking.com Hotel Search
+
+Use Scrapling `/search` for structured hotel extraction:
+
+Reference: [Scrapling Documentation](https://scrapling.readthedocs.io/en/latest/overview.html)
+
 ```
+POST {SCRAPLING_URL}/search
+{"site":"booking","destination":"Tokyo","checkin":"2026-03-15","checkout":"2026-03-22","guests":2}
+```
+Returns: `{"results": [{"name":"..","price":"..","rating":"..","location":".."}], "count": N}`
 
-All 9 skills + premium recovery plans:
-→ https://clawhub.ai/kurosh87/aerobase-travel-concierge
+**Note:** Booking.com is in the "challenge" tier — consent walls may block search params.
+If `challenge != "pass"` and count is 0, fall back to native browser with PROXY.
+
+### Browser — Google Hotels Workflow (DIRECT, no proxy)
+1. Navigate to https://www.google.com/travel/hotels
+2. Dismiss cookie consent if shown
+3. Type destination, wait for suggestions
+4. Results show aggregated prices from multiple booking sites
+5. Useful for: "Is LiteAPI's price competitive?"
+
+### When to SKIP browser entirely
+- User just wants quick availability check → LiteAPI only
+- User asks for specific hotel by name → LiteAPI lookup, no need to scrape
+- Budget/simple queries → LiteAPI is sufficient
+- Only use browser when user wants comparison, reviews, or visual confirmation
