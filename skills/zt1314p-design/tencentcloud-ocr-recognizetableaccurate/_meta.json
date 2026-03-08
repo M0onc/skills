@@ -1,11 +1,17 @@
 {
   "owner": "zt1314p-design",
   "slug": "tencentcloud-ocr-recognizetableaccurate",
-  "displayName": "tencentcloud-ocr-recognizetableaccurate",
+  "displayName": "TencentCloud RecognizeTable OCR",
   "latest": {
-    "version": "1.0.0",
-    "publishedAt": 1772809538831,
-    "commit": "https://github.com/openclaw/skills/commit/55fd239e14d2d99606dc2c3032f04bed98b4e83e"
+    "version": "1.0.1",
+    "publishedAt": 1772962292953,
+    "commit": null
   },
-  "history": []
+  "history": [
+    {
+      "version": "1.0.0",
+      "publishedAt": 1772809538831,
+      "commit": "https://github.com/openclaw/skills/commit/55fd239e14d2d99606dc2c3032f04bed98b4e83e"
+    }
+  ]
 }
