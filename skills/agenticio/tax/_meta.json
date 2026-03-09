@@ -1,0 +1,11 @@
+{
+  "owner": "agenticio",
+  "slug": "tax",
+  "displayName": "Tax",
+  "latest": {
+    "version": "2.0.0",
+    "publishedAt": 1772975474776,
+    "commit": null
+  },
+  "history": []
+}
