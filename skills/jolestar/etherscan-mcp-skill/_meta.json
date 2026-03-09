@@ -1,0 +1,11 @@
+{
+  "owner": "jolestar",
+  "slug": "etherscan-mcp-skill",
+  "displayName": "Etherscan Mcp Skill",
+  "latest": {
+    "version": "1.0.0",
+    "publishedAt": 1772899637095,
+    "commit": null
+  },
+  "history": []
+}
