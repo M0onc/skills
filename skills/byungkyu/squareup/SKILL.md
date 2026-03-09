@@ -1,8 +1,8 @@
 ---
 name: squareup
 description: |
-  Square API integration with managed OAuth. Process payments, manage customers, orders, catalog, inventory, and invoices.
-  Use this skill when users want to accept payments, manage point-of-sale operations, track inventory, or handle invoicing through Square.
+  Square API integration with managed OAuth. Process payments, manage customers, orders, catalog, inventory, invoices, loyalty programs, team members, and more.
+  Use this skill when users want to accept payments, manage point-of-sale operations, track inventory, handle invoicing, manage loyalty programs, or create payment links through Square.
   For other third party apps, use the api-gateway skill (https://clawhub.ai/byungkyu/api-gateway).
   Requires network access and valid Maton API key.
 metadata:
@@ -447,6 +447,18 @@ Content-Type: application/json
 }
 ```
 
+#### Pay Order
+
+```bash
+POST /squareup/v2/orders/{order_id}/pay
+Content-Type: application/json
+
+{
+  "idempotency_key": "unique-key",
+  "payment_ids": ["{payment_id}"]
+}
+```
+
 ### Catalog
 
 #### List Catalog
@@ -697,6 +709,281 @@ Content-Type: application/json
 }
 ```
 
+### Team Members
+
+#### Search Team Members
+
+```bash
+POST /squareup/v2/team-members/search
+Content-Type: application/json
+
+{
+  "query": {
+    "filter": {
+      "location_ids": ["{location_id}"],
+      "status": "ACTIVE"
+    }
+  }
+}
+```
+
+#### Get Team Member
+
+```bash
+GET /squareup/v2/team-members/{team_member_id}
+```
+
+#### Update Team Member
+
+```bash
+PUT /squareup/v2/team-members/{team_member_id}
+Content-Type: application/json
+
+{
+  "team_member": {
+    "given_name": "Updated Name"
+  }
+}
+```
+
+### Loyalty
+
+#### List Loyalty Programs
+
+```bash
+GET /squareup/v2/loyalty/programs
+```
+
+#### Get Loyalty Program
+
+```bash
+GET /squareup/v2/loyalty/programs/{program_id}
+```
+
+#### Search Loyalty Accounts
+
+```bash
+POST /squareup/v2/loyalty/accounts/search
+Content-Type: application/json
+
+{
+  "query": {
+    "customer_ids": ["{customer_id}"]
+  }
+}
+```
+
+#### Create Loyalty Account
+
+```bash
+POST /squareup/v2/loyalty/accounts
+Content-Type: application/json
+
+{
+  "loyalty_account": {
+    "program_id": "{program_id}",
+    "mapping": {
+      "phone_number": "+15551234567"
+    }
+  },
+  "idempotency_key": "unique-key"
+}
+```
+
+#### Accumulate Loyalty Points
+
+```bash
+POST /squareup/v2/loyalty/accounts/{account_id}/accumulate
+Content-Type: application/json
+
+{
+  "accumulate_points": {
+    "order_id": "{order_id}"
+  },
+  "location_id": "{location_id}",
+  "idempotency_key": "unique-key"
+}
+```
+
+### Payment Links (Online Checkout)
+
+#### List Payment Links
+
+```bash
+GET /squareup/v2/online-checkout/payment-links
+```
+
+#### Get Payment Link
+
+```bash
+GET /squareup/v2/online-checkout/payment-links/{id}
+```
+
+#### Create Payment Link
+
+```bash
+POST /squareup/v2/online-checkout/payment-links
+Content-Type: application/json
+
+{
+  "idempotency_key": "unique-key",
+  "quick_pay": {
+    "name": "Payment for Service",
+    "price_money": {
+      "amount": 1000,
+      "currency": "USD"
+    },
+    "location_id": "{location_id}"
+  }
+}
+```
+
+#### Update Payment Link
+
+```bash
+PUT /squareup/v2/online-checkout/payment-links/{id}
+Content-Type: application/json
+
+{
+  "payment_link": {
+    "version": 1,
+    "description": "Updated description"
+  }
+}
+```
+
+#### Delete Payment Link
+
+```bash
+DELETE /squareup/v2/online-checkout/payment-links/{id}
+```
+
+### Cards
+
+#### List Cards
+
+```bash
+GET /squareup/v2/cards
+GET /squareup/v2/cards?customer_id={customer_id}
+```
+
+#### Get Card
+
+```bash
+GET /squareup/v2/cards/{card_id}
+```
+
+#### Create Card
+
+```bash
+POST /squareup/v2/cards
+Content-Type: application/json
+
+{
+  "idempotency_key": "unique-key",
+  "source_id": "cnon:card-nonce-ok",
+  "card": {
+    "customer_id": "{customer_id}"
+  }
+}
+```
+
+#### Disable Card
+
+```bash
+POST /squareup/v2/cards/{card_id}/disable
+```
+
+### Payouts
+
+#### List Payouts
+
+```bash
+GET /squareup/v2/payouts
+GET /squareup/v2/payouts?location_id={location_id}
+```
+
+#### Get Payout
+
+```bash
+GET /squareup/v2/payouts/{payout_id}
+```
+
+#### List Payout Entries
+
+```bash
+GET /squareup/v2/payouts/{payout_id}/payout-entries
+```
+
+### Bank Accounts
+
+#### List Bank Accounts
+
+```bash
+GET /squareup/v2/bank-accounts
+```
+
+#### Get Bank Account
+
+```bash
+GET /squareup/v2/bank-accounts/{bank_account_id}
+```
+
+### Terminal
+
+#### List Terminal Checkouts
+
+```bash
+GET /squareup/v2/terminals/checkouts
+```
+
+#### Create Terminal Checkout
+
+```bash
+POST /squareup/v2/terminals/checkouts
+Content-Type: application/json
+
+{
+  "idempotency_key": "unique-key",
+  "checkout": {
+    "amount_money": {
+      "amount": 1000,
+      "currency": "USD"
+    },
+    "device_options": {
+      "device_id": "{device_id}"
+    }
+  }
+}
+```
+
+#### Get Terminal Checkout
+
+```bash
+GET /squareup/v2/terminals/checkouts/{checkout_id}
+```
+
+#### Search Terminal Checkouts
+
+```bash
+POST /squareup/v2/terminals/checkouts/search
+Content-Type: application/json
+
+{
+  "query": {
+    "filter": {
+      "status": "COMPLETED"
+    }
+  }
+}
+```
+
+#### Cancel Terminal Checkout
+
+```bash
+POST /squareup/v2/terminals/checkouts/{checkout_id}/cancel
+```
+
 ## Pagination
 
 Square uses cursor-based pagination. List endpoints return a `cursor` field when more results exist:
@@ -821,5 +1108,12 @@ If you receive a 403 error with `INSUFFICIENT_SCOPES`, the OAuth connection does
 - [Inventory API](https://developer.squareup.com/reference/square/inventory-api)
 - [Invoices API](https://developer.squareup.com/reference/square/invoices-api)
 - [Locations API](https://developer.squareup.com/reference/square/locations-api)
+- [Team Members API](https://developer.squareup.com/reference/square/team-api)
+- [Loyalty API](https://developer.squareup.com/reference/square/loyalty-api)
+- [Online Checkout API](https://developer.squareup.com/reference/square/online-checkout-api)
+- [Cards API](https://developer.squareup.com/reference/square/cards-api)
+- [Payouts API](https://developer.squareup.com/reference/square/payouts-api)
+- [Bank Accounts API](https://developer.squareup.com/reference/square/bank-accounts-api)
+- [Terminal API](https://developer.squareup.com/reference/square/terminal-api)
 - [Maton Community](https://discord.com/invite/dBfFAcefs2)
 - [Maton Support](mailto:support@maton.ai)
