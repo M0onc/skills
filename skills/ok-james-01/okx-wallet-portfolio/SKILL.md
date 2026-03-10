@@ -4,134 +4,115 @@ description: "This skill should be used when the user asks to 'check my wallet b
 license: Apache-2.0
 metadata:
   author: okx
-  version: "1.0.0"
+  version: "1.0.1"
   homepage: "https://web3.okx.com"
 ---
 
-# OKX Wallet Portfolio API
+# OKX Wallet Portfolio CLI
 
-4 endpoints for supported chains, wallet total value, all token balances, and specific token balances.
+4 commands for supported chains, wallet total value, all token balances, and specific token balances.
 
-**Base URL**: `https://web3.okx.com`
+## Pre-flight Checks
 
-**Base path**: `/api/v6/dex/balance`
+Every time before running any `onchainos` command, always follow these steps in order. Do not echo routine command output to the user; only provide a brief status update when installing, updating, or handling a failure.
 
-**Auth**: HMAC-SHA256 signature, 4 headers required (`OK-ACCESS-KEY`, `OK-ACCESS-SIGN`, `OK-ACCESS-PASSPHRASE`, `OK-ACCESS-TIMESTAMP`)
+1. **Confirm installed**: Run `which onchainos`. If not found, install it:
+   ```bash
+   curl -sSL https://raw.githubusercontent.com/okx/onchainos-skills/main/install.sh | sh
+   ```
+   If the install script fails, ask the user to install manually following the instructions at: https://github.com/okx/onchainos-skills
 
-## Authentication & Credentials
+2. **Check for updates**: Read `~/.onchainos/last_check` and compare it with the current timestamp:
+   ```bash
+   cached_ts=$(cat ~/.onchainos/last_check 2>/dev/null || true)
+   now=$(date +%s)
+   ```
+   - If `cached_ts` is non-empty and `(now - cached_ts) < 43200` (12 hours), skip the update and proceed.
+   - Otherwise (file missing or older than 12 hours), run the installer to check for updates:
+     ```bash
+     curl -sSL https://raw.githubusercontent.com/okx/onchainos-skills/main/install.sh | sh
+     ```
+     If a newer version is installed, tell the user and suggest updating their onchainos skills from https://github.com/okx/onchainos-skills to get the latest features.
+3. If any `onchainos` command fails with an unexpected error during this
+   session, try reinstalling before giving up:
+   ```bash
+   curl -sSL https://raw.githubusercontent.com/okx/onchainos-skills/main/install.sh | sh
+   ```
+4. Create a `.env` file in the project root to override the default API credentials (optional — skip this for quick start):
+   ```
+   OKX_API_KEY=
+   OKX_SECRET_KEY=
+   OKX_PASSPHRASE=
+   ```
 
-**API Key Application**: [OKX Developer Portal](https://web3.okx.com/onchain-os/dev-portal)
+## Skill Routing
 
-**Setup Guide**: [Developer Portal Docs](https://web3.okx.com/onchain-os/dev-docs/wallet-api/developer-portal)
+- For token prices / K-lines → use `okx-dex-market`
+- For token search / metadata → use `okx-dex-token`
+- For swap execution → use `okx-dex-swap`
+- For transaction broadcasting → use `okx-onchain-gateway`
 
-Read credentials from environment variables:
-- `OKX_API_KEY` → API key
-- `OKX_SECRET_KEY` → Secret key (system-generated)
-- `OKX_PASSPHRASE` → Passphrase (developer-supplied)
+## Quickstart
 
-**Never** output the above credentials to logs, response content, or any user-visible interface.
+```bash
+# Get supported chains for balance queries
+onchainos portfolio chains
 
-```typescript
-import crypto from 'crypto';
+# Get total asset value on XLayer and Solana
+onchainos portfolio total-value --address 0xYourWallet --chains "xlayer,solana"
 
-const BASE = 'https://web3.okx.com';
+# Get all token balances
+onchainos portfolio all-balances --address 0xYourWallet --chains "xlayer,solana,ethereum"
 
-// Shared test API key (for development/testing only)
-const OKX_API_KEY = process.env.OKX_API_KEY || '03f0b376-251c-4618-862e-ae92929e0416';
-const OKX_SECRET_KEY = process.env.OKX_SECRET_KEY || '652ECE8FF13210065B0851FFDA9191F7';
-const OKX_PASSPHRASE = process.env.OKX_PASSPHRASE || 'onchainOS#666';
-
-// Signature rule:
-//   GET  → body = "", requestPath includes query string (e.g., "/api/v6/dex/balance/all-token-balances-by-address?address=0x...&chains=196,501")
-//   POST → body = JSON string of request body, requestPath is path only (e.g., "/api/v6/dex/balance/token-balances-by-address")
-async function okxFetch(method: 'GET' | 'POST', path: string, body?: object) {
-  const timestamp = new Date().toISOString();
-  const bodyStr = body ? JSON.stringify(body) : '';
-  const sign = crypto
-    .createHmac('sha256', OKX_SECRET_KEY)
-    .update(timestamp + method + path + bodyStr)
-    .digest('base64');
-  const headers: Record<string, string> = {
-    'OK-ACCESS-KEY': OKX_API_KEY,
-    'OK-ACCESS-SIGN': sign,
-    'OK-ACCESS-PASSPHRASE': OKX_PASSPHRASE,
-    'OK-ACCESS-TIMESTAMP': timestamp,
-    'Content-Type': 'application/json',
-  };
-  const res = await fetch(`${BASE}${path}`, {
-    method,
-    headers,
-    ...(body && { body: bodyStr }),
-  });
-  if (res.status === 429) throw { code: 'RATE_LIMITED', msg: 'Rate limited — retry with backoff', retryable: true };
-  if (res.status >= 500) throw { code: `HTTP_${res.status}`, msg: 'Server error', retryable: true };
-  const json = await res.json();
-  if (json.code !== '0') throw { code: json.code, msg: json.msg || 'API error', retryable: false };
-  return json.data;
-}
+# Check specific tokens (native OKB + USDC on XLayer)
+onchainos portfolio token-balances --address 0xYourWallet --tokens "196:,196:0x74b7f16337b8972027f6196a17a631ac6de26d22"
 ```
 
-Response envelope: `{ "code": "0", "data": [...], "msg": "" }`. `code` = `"0"` means success.
+## Chain Name Support
 
-## Developer Quickstart
+The CLI accepts human-readable chain names and resolves them automatically.
 
-```typescript
-// Get all token balances (GET)
-const balances = await okxFetch('GET', '/api/v6/dex/balance/all-token-balances-by-address?' + new URLSearchParams({
-  address: '0xYourWallet', chains: '196,501,1',
-}));
-// → balances[].tokenAssets[]: { symbol, balance (UI units), tokenPrice, rawBalance }
+| Chain | Name | chainIndex |
+|---|---|---|
+| XLayer | `xlayer` | `196` |
+| Solana | `solana` | `501` |
+| Ethereum | `ethereum` | `1` |
+| Base | `base` | `8453` |
+| BSC | `bsc` | `56` |
+| Arbitrum | `arbitrum` | `42161` |
 
-// Check specific tokens (POST)
-const specific = await okxFetch('POST', '/api/v6/dex/balance/token-balances-by-address', {
-  address: '0xYourWallet',
-  tokenContractAddresses: [
-    { chainIndex: '196', tokenContractAddress: '' },  // native OKB
-    { chainIndex: '196', tokenContractAddress: '0x74b7f16337b8972027f6196a17a631ac6de26d22' },  // USDC
-  ],
-});
-```
+**Address format note**: EVM addresses (`0x...`) work across Ethereum/BSC/Polygon/Arbitrum/Base etc. Solana addresses (Base58) and Bitcoin addresses (UTXO) have different formats. Do NOT mix formats across chain types.
 
-## Common Chain IDs
+## Command Index
 
-| Chain | chainIndex | Chain | chainIndex |
-|---|---|---|---|
-| XLayer | `196` | Base | `8453` |
-| Solana | `501` | BSC | `56` |
-| Ethereum | `1` | Arbitrum | `42161` |
-
-**Address format note**: The same `address` parameter is only valid across chains of the same type. EVM addresses (`0x...`) work on Ethereum/BSC/Polygon/Arbitrum/Base etc. Solana addresses (Base58) and Bitcoin addresses (UTXO) have different formats. Do NOT mix — e.g., passing an EVM address with `chains="1,501"` will return empty data for the Solana portion.
-
-## Endpoint Index
-
-| # | Method | Path | Docs |
-|---|---|---|---|
-| 1 | GET | `/api/v6/dex/balance/supported/chain` | [supported-chain](https://web3.okx.com/onchain-os/dev-docs/market/balance-chains) |
-| 2 | GET | `/api/v6/dex/balance/total-value-by-address` | [total-value-by-address](https://web3.okx.com/onchain-os/dev-docs/market/balance-total-value) |
-| 3 | GET | `/api/v6/dex/balance/all-token-balances-by-address` | [all-token-balances-by-address](https://web3.okx.com/onchain-os/dev-docs/market/balance-total-token-balances) |
-| 4 | POST | `/api/v6/dex/balance/token-balances-by-address` | [token-balances-by-address](https://web3.okx.com/onchain-os/dev-docs/market/balance-specific-token-balance) |
-
-Error Codes: [Balance Error Codes](https://web3.okx.com/onchain-os/dev-docs/market/balance-error-code)
+| # | Command | Description |
+|---|---|---|
+| 1 | `onchainos portfolio chains` | Get supported chains for balance queries |
+| 2 | `onchainos portfolio total-value --address ... --chains ...` | Get total asset value for a wallet |
+| 3 | `onchainos portfolio all-balances --address ... --chains ...` | Get all token balances for a wallet |
+| 4 | `onchainos portfolio token-balances --address ... --tokens ...` | Get specific token balances |
 
 ## Cross-Skill Workflows
 
-This skill is often used **before swap** (to verify sufficient balance) or **as portfolio entry point**. Below are typical end-to-end flows showing how data flows between skills.
+This skill is often used **before swap** (to verify sufficient balance) or **as portfolio entry point**.
 
 ### Workflow A: Pre-Swap Balance Check
 
 > User: "Swap 1 SOL for BONK"
 
 ```
-1. okx-dex-token   /market/token/search?search=BONK                     → get tokenContractAddress
-2. okx-wallet-portfolio /balance/all-token-balances-by-address                → verify SOL balance >= 1
+1. okx-dex-token    onchainos token search BONK --chains solana               → get tokenContractAddress
+       ↓ tokenContractAddress
+2. okx-wallet-portfolio  onchainos portfolio all-balances --address <addr> --chains solana
+       → verify SOL balance >= 1
        ↓ balance field (UI units) → convert to minimal units for swap
-3. okx-dex-swap    /aggregator/quote                                     → get quote
-4. okx-dex-swap    /aggregator/swap-instruction                          → execute (Solana)
+3. okx-dex-swap     onchainos swap quote --from 11111111111111111111111111111111 --to <BONK_address> --amount 1000000000 --chain solana
+4. okx-dex-swap     onchainos swap swap --from ... --to <BONK_address> --amount 1000000000 --chain solana --wallet <addr>
 ```
 
 **Data handoff**:
-- `tokenContractAddress` from token search → feeds into swap `fromTokenAddress` / `toTokenAddress`
-- `balance` from balance API is **UI units**; swap API needs **minimal units** → multiply by `10^decimal`
+- `tokenContractAddress` from token search → feeds into swap `--from` / `--to`
+- `balance` from portfolio is **UI units**; swap needs **minimal units** → multiply by `10^decimal`
 - If balance < required amount → inform user, do NOT proceed to swap
 
 ### Workflow B: Portfolio Overview + Analysis
@@ -139,39 +120,42 @@ This skill is often used **before swap** (to verify sufficient balance) or **as 
 > User: "Show my portfolio"
 
 ```
-1. okx-wallet-portfolio /balance/total-value-by-address                        → total USD value
-2. okx-wallet-portfolio /balance/all-token-balances-by-address                 → per-token breakdown
+1. okx-wallet-portfolio  onchainos portfolio total-value --address <addr> --chains "xlayer,solana,ethereum"
+       → total USD value
+2. okx-wallet-portfolio  onchainos portfolio all-balances --address <addr> --chains "xlayer,solana,ethereum"
+       → per-token breakdown
        ↓ top holdings by USD value
-3. okx-dex-token   /market/price-info                                     → enrich with 24h change, market cap, liquidity
-4. okx-dex-market  /market/candles (optional)                             → price charts for tokens of interest
+3. okx-dex-token    onchainos token price-info <address> --chain <chain>  → enrich with 24h change, market cap
+4. okx-dex-market   onchainos market kline <address> --chain <chain>      → price charts for tokens of interest
 ```
 
 ### Workflow C: Sell Underperforming Tokens
 
 ```
-1. okx-wallet-portfolio /balance/all-token-balances-by-address                 → list all holdings
+1. okx-wallet-portfolio  onchainos portfolio all-balances --address <addr> --chains "xlayer,solana,ethereum"
+       → list all holdings
        ↓ tokenContractAddress + chainIndex for each
-2. okx-dex-token   /market/price-info                                     → get priceChange24H per token
+2. okx-dex-token    onchainos token price-info <address> --chain <chain>  → get priceChange24H per token
 3. Filter by negative change → user confirms which to sell
-4. okx-dex-swap    /aggregator/quote → /aggregator/swap → execute sell
+4. okx-dex-swap     onchainos swap quote → onchainos swap swap → execute sell
 ```
 
-**Key conversion**: `balance` (UI units) × `10^decimal` = `amount` (minimal units) for swap API.
+**Key conversion**: `balance` (UI units) × `10^decimal` = `amount` (minimal units) for swap.
 
 ## Operation Flow
 
 ### Step 1: Identify Intent
 
-- Check total assets -> `GET /balance/total-value-by-address`
-- View all token holdings -> `GET /balance/all-token-balances-by-address`
-- Check specific token balance -> `POST /balance/token-balances-by-address`
-- Unsure which chains are supported -> `GET /balance/supported/chain` first
+- Check total assets → `onchainos portfolio total-value`
+- View all token holdings → `onchainos portfolio all-balances`
+- Check specific token balance → `onchainos portfolio token-balances`
+- Unsure which chains are supported → `onchainos portfolio chains` first
 
 ### Step 2: Collect Parameters
 
-- Missing wallet address -> ask user
-- Missing target chains -> recommend XLayer (chainIndex `196`, low gas, fast confirmation) as the default, then ask which chain the user prefers. Common set: `"196,501,1,8453,56"`
-- Need to filter risky tokens -> set `excludeRiskToken=true` (only works on ETH/BSC/SOL/BASE)
+- Missing wallet address → ask user
+- Missing target chains → recommend XLayer (`--chains xlayer`, low gas, fast confirmation) as the default, then ask which chain the user prefers. Common set: `"xlayer,solana,ethereum,base,bsc"`
+- Need to filter risky tokens → set `--exclude-risk 0` (only works on ETH/BSC/SOL/BASE)
 
 ### Step 3: Call and Display
 
@@ -181,152 +165,135 @@ This skill is often used **before swap** (to verify sufficient balance) or **as 
 
 ### Step 4: Suggest Next Steps
 
-After displaying results, suggest 2-3 relevant follow-up actions based on the endpoint just called:
+After displaying results, suggest 2-3 relevant follow-up actions:
 
-| Just called | Suggest |
+| Just completed | Suggest |
 |---|---|
-| `/balance/total-value-by-address` | 1. View token-level breakdown → `/balance/all-token-balances-by-address` (this skill) 2. Check price trend for top holdings → `okx-dex-market` |
-| `/balance/all-token-balances-by-address` | 1. View detailed analytics (market cap, 24h change) for a token → `okx-dex-token` 2. Swap a token → `okx-dex-swap` 3. View price chart for a token → `okx-dex-market` |
-| `/balance/token-balances-by-address` | 1. View full portfolio across all tokens → `/balance/all-token-balances-by-address` (this skill) 2. Swap this token → `okx-dex-swap` |
+| `portfolio total-value` | 1. View token-level breakdown → `onchainos portfolio all-balances` (this skill) 2. Check price trend for top holdings → `okx-dex-market` |
+| `portfolio all-balances` | 1. View detailed analytics (market cap, 24h change) for a token → `okx-dex-token` 2. Swap a token → `okx-dex-swap` 3. View price chart for a token → `okx-dex-market` |
+| `portfolio token-balances` | 1. View full portfolio across all tokens → `onchainos portfolio all-balances` (this skill) 2. Swap this token → `okx-dex-swap` |
 
 Present conversationally, e.g.: "Would you like to see the price chart for your top holding, or swap any of these tokens?" — never expose skill names or endpoint paths to the user.
 
-## API Reference
+## CLI Command Reference
 
-### 1. GET /balance/supported/chain
+### 1. onchainos portfolio chains
 
-No request parameters.
+Get supported chains for balance queries. No parameters required.
 
-**Response:**
+```bash
+onchainos portfolio chains
+```
+
+**Return fields**:
 
 | Field | Type | Description |
 |---|---|---|
-| `data[].name` | String | Chain name (e.g., "XLayer") |
-| `data[].logoUrl` | String | Chain logo URL |
-| `data[].shortName` | String | Chain short name (e.g., "OKB") |
-| `data[].chainIndex` | String | Chain unique identifier (e.g., "196") |
+| `name` | String | Chain name (e.g., `"XLayer"`) |
+| `logoUrl` | String | Chain logo URL |
+| `shortName` | String | Chain short name (e.g., `"OKB"`) |
+| `chainIndex` | String | Chain unique identifier (e.g., `"196"`) |
 
-```json
-{ "code": "0", "data": [{ "name": "XLayer", "logoUrl": "...", "shortName": "OKB", "chainIndex": "196" }], "msg": "" }
+### 2. onchainos portfolio total-value
+
+Get total asset value for a wallet address.
+
+```bash
+onchainos portfolio total-value --address <address> --chains <chains> [--asset-type <type>] [--exclude-risk <bool>]
 ```
 
-### 2. GET /balance/total-value-by-address
-
-> **`excludeRiskToken` type warning**: This endpoint uses `Boolean` (`true`/`false`), but endpoints #3 and #4 use `String` (`"0"`/`"1"`). This is an OKX API inconsistency — pay attention to the type per endpoint.
-
-| Param | Type | Required | Description |
+| Param | Required | Default | Description |
 |---|---|---|---|
-| `address` | String | Yes | Wallet address |
-| `chains` | String | Yes | Chain IDs, comma-separated, max 50. e.g., `"196,501"` |
-| `assetType` | String | No | `0`=all (default), `1`=tokens only, `2`=DeFi only |
-| `excludeRiskToken` | Boolean | No | `true`=filter risky tokens (default), `false`=include. Only ETH/BSC/SOL/BASE |
+| `--address` | Yes | - | Wallet address |
+| `--chains` | Yes | - | Chain names or IDs, comma-separated (e.g., `"xlayer,solana"` or `"196,501"`) |
+| `--asset-type` | No | `"0"` | `0`=all, `1`=tokens only, `2`=DeFi only |
+| `--exclude-risk` | No | `true` | `true`=filter risky tokens, `false`=include. Only ETH/BSC/SOL/BASE |
 
-**Response:**
+**Return fields**:
 
 | Field | Type | Description |
 |---|---|---|
-| `data[].totalValue` | String | Total asset value in USD |
+| `totalValue` | String | Total asset value in USD |
 
-```json
-{ "code": "0", "data": [{ "totalValue": "1172.895057177065864522" }], "msg": "success" }
+### 3. onchainos portfolio all-balances
+
+Get all token balances for a wallet address.
+
+```bash
+onchainos portfolio all-balances --address <address> --chains <chains> [--exclude-risk <value>]
 ```
 
-### 3. GET /balance/all-token-balances-by-address
-
-| Param | Type | Required | Description |
+| Param | Required | Default | Description |
 |---|---|---|---|
-| `address` | String | Yes | Wallet address |
-| `chains` | String | Yes | Chain IDs, comma-separated, max 50 |
-| `excludeRiskToken` | String | No | `0`=filter out (default), `1`=do not filter. Only ETH/BSC/SOL/BASE |
+| `--address` | Yes | - | Wallet address |
+| `--chains` | Yes | - | Chain names or IDs, comma-separated, max 50 |
+| `--exclude-risk` | No | `"0"` | `0`=filter out risky tokens (default), `1`=include. Only ETH/BSC/SOL/BASE |
 
-**Response key fields**: `tokenAssets[]` — `chainIndex`, `tokenContractAddress`, `symbol`, `balance` (UI units), `rawBalance` (base units), `tokenPrice` (USD), `isRiskToken`. Full fields: see [docs](https://web3.okx.com/onchain-os/dev-docs/market/balance-total-token-balances).
+**Return fields** (per token in `tokenAssets[]`):
 
-```json
-{
-  "code": "0",
-  "data": [{
-    "tokenAssets": [{
-      "chainIndex": "196", "tokenContractAddress": "0xea034fb02eb1808c2cc3adbc15f447b93cbe08e1",
-      "symbol": "WBTC", "balance": "0.5", "rawBalance": "50000000",
-      "tokenPrice": "65000.00", "isRiskToken": false,
-      "address": "0xEd0C6079229E2d407672a117c22b62064f4a4312"
-    }]
-  }],
-  "msg": "success"
-}
+| Field | Type | Description |
+|---|---|---|
+| `chainIndex` | String | Chain identifier |
+| `tokenContractAddress` | String | Token contract address |
+| `symbol` | String | Token symbol (e.g., `"OKB"`) |
+| `balance` | String | Token balance in UI units (e.g., `"10.5"`) |
+| `rawBalance` | String | Token balance in base units (e.g., `"10500000000000000000"`) |
+| `tokenPrice` | String | Token price in USD |
+| `isRiskToken` | Boolean | `true` if flagged as risky |
+
+### 4. onchainos portfolio token-balances
+
+Get specific token balances for a wallet address.
+
+```bash
+onchainos portfolio token-balances --address <address> --tokens <tokens> [--exclude-risk <value>]
 ```
 
-### 4. POST /balance/token-balances-by-address
-
-| Param | Type | Required | Description |
+| Param | Required | Default | Description |
 |---|---|---|---|
-| `address` | String | Yes | Wallet address |
-| `tokenContractAddresses` | Array | Yes | Max 20 items |
-| `tokenContractAddresses[].chainIndex` | String | Yes | Chain ID (e.g., `"196"`) |
-| `tokenContractAddresses[].tokenContractAddress` | String | Yes | Token address (`""` for native token) |
-| `excludeRiskToken` | String | No | `0`=filter out (default), `1`=do not filter |
+| `--address` | Yes | - | Wallet address |
+| `--tokens` | Yes | - | Token list: `"chainIndex:tokenAddress"` pairs, comma-separated. Use empty address for native token (e.g., `"196:"` for native OKB). Max 20 items. |
+| `--exclude-risk` | No | `"0"` | `0`=filter out (default), `1`=include |
 
-**Response:** Same schema as endpoint #3.
-
-```json
-{
-  "code": "0",
-  "data": [{
-    "tokenAssets": [{
-      "chainIndex": "196", "tokenContractAddress": "",
-      "symbol": "OKB", "balance": "10.5", "tokenPrice": "48.50",
-      "isRiskToken": false, "rawBalance": "1500000000000000000", "address": "0x..."
-    }]
-  }],
-  "msg": "success"
-}
-```
+**Return fields**: Same schema as `all-balances` (`tokenAssets[]`).
 
 ## Input / Output Examples
 
-**User says:** "Check my wallet 0xABC... total assets on XLayer and Solana"
+**User says:** "Check my wallet total assets on XLayer and Solana"
 
-```
-GET /api/v6/dex/balance/total-value-by-address?address=0xabc...&chains=196,501
--> Display: Total assets $12,345.67
+```bash
+onchainos portfolio total-value --address 0xYourWallet --chains "xlayer,solana"
+# → Display: Total assets $12,345.67
 ```
 
 **User says:** "Show all tokens in my wallet"
 
-```
-GET /api/v6/dex/balance/all-token-balances-by-address?address=0xabc...&chains=196,501
--> Display:
-  OKB:  10.5 ($509.25)
-  USDC: 2,000 ($2,000.00)
-  USDT: 1,500 ($1,500.00)
-  ...
+```bash
+onchainos portfolio all-balances --address 0xYourWallet --chains "xlayer,solana,ethereum"
+# → Display:
+#   OKB:  10.5 ($509.25)
+#   USDC: 2,000 ($2,000.00)
+#   USDT: 1,500 ($1,500.00)
+#   ...
 ```
 
-**User says:** "Only check USDC and USDT balances"
+**User says:** "Only check USDC and native OKB balances on XLayer"
 
-```
-POST /api/v6/dex/balance/token-balances-by-address
-Body: {
-  "address": "0xabc...",
-  "tokenContractAddresses": [
-    { "chainIndex": "196", "tokenContractAddress": "0x74b7f16337b8972027f6196a17a631ac6de26d22" },
-    { "chainIndex": "196", "tokenContractAddress": "0x779ded0c9e1022225f8e0630b35a9b54be713736" }
-  ]
-}
--> Display: USDC: 2,000 ($2,000.00), USDT: 1,500 ($1,500.00)
+```bash
+onchainos portfolio token-balances --address 0xYourWallet --tokens "196:,196:0x74b7f16337b8972027f6196a17a631ac6de26d22"
+# → Display: OKB: 10.5 ($509.25), USDC: 2,000 ($2,000.00)
 ```
 
 ## Edge Cases
 
 - **Zero balance**: valid state — display `$0.00`, not an error
-- **Unsupported chain**: call `/balance/supported/chain` first to confirm
+- **Unsupported chain**: call `onchainos portfolio chains` first to confirm
 - **chains exceeds 50**: split into batches, max 50 per request
-- **`excludeRiskToken` not working**: only supported on ETH/BSC/SOL/BASE
-- **DeFi positions**: use `assetType=2` to query DeFi holdings separately
-- **429 rate limit**: exponential backoff with jitter. See [Rate Limit & Fee Docs](https://web3.okx.com/onchain-os/dev-docs/home/api-fee) for tier-specific RPS limits (Trial: 1 RPS, Start-up: 2-50 RPS, Enterprise: custom).
-- **Cross-skill pipeline rate limit**: when chaining calls across multiple skills (e.g., token search → balance → swap), add 300-500ms delay between requests to avoid triggering rate limit (error code `50011`).
-- **Network error**: retry once
-- **Request timeout**: all API calls must set a **10-second** timeout limit
+- **`--exclude-risk` not working**: only supported on ETH/BSC/SOL/BASE
+- **DeFi positions**: use `--asset-type 2` to query DeFi holdings separately
+- **Address format mismatch**: EVM address on Solana chain will return empty data — do NOT mix
+- **Network error**: retry once, then prompt user to try again later
+- **Region restriction (error code 50125 or 80001)**: do NOT show the raw error code to the user. Instead, display a friendly message: `⚠️ Service is not available in your region. Please switch to a supported region and try again.`
 
 ## Amount Display Rules
 
@@ -337,16 +304,9 @@ Body: {
 
 ## Global Notes
 
-- `chains` supports up to **50** chain IDs (comma-separated strings)
-- `assetType`: `0`=all `1`=tokens only `2`=DeFi only
-- `excludeRiskToken` only works on ETH(`1`)/BSC(`56`)/SOL(`501`)/BASE(`8453`)
-- `/token-balances-by-address` is the only **POST** endpoint in this family
-- Total value is returned as a USD string — handle type conversion
-- For token prices / K-lines -> use `okx-dex-market`
-- For token search / metadata -> use `okx-dex-token`
-- For swap execution -> use `okx-dex-swap`
-
-## Key Safety Points
-
-- Built-in sandbox API keys work out of the box, using this might get a rate limit.
-- On first use, notify the user: 'You can override with your own keys via `OKX_API_KEY` / `OKX_SECRET_KEY` / `OKX_PASSPHRASE` env vars for stable production usage'
+- `--chains` supports up to **50** chain IDs (comma-separated, names or numeric)
+- `--asset-type`: `0`=all `1`=tokens only `2`=DeFi only (only for `total-value`)
+- `--exclude-risk` only works on ETH(`1`)/BSC(`56`)/SOL(`501`)/BASE(`8453`)
+- `token-balances` supports max **20** token entries
+- The CLI resolves chain names automatically (e.g., `ethereum` → `1`, `solana` → `501`)
+- The CLI handles authentication internally via environment variables — see Prerequisites step 4 for default values
