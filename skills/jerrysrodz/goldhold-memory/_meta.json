@@ -3,11 +3,16 @@
   "slug": "goldhold-memory",
   "displayName": "GoldHold Memory",
   "latest": {
-    "version": "1.0.3",
-    "publishedAt": 1773171501559,
-    "commit": "https://github.com/openclaw/skills/commit/a0c6ffa096902c767a95d563da85d0b3c25d676a"
+    "version": "1.0.6",
+    "publishedAt": 1773171828162,
+    "commit": null
   },
   "history": [
+    {
+      "version": "1.0.3",
+      "publishedAt": 1773171501559,
+      "commit": "https://github.com/openclaw/skills/commit/a0c6ffa096902c767a95d563da85d0b3c25d676a"
+    },
     {
       "version": "1.0.2",
       "publishedAt": 1773171411985,

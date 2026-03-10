@@ -12,12 +12,10 @@ Patent Pending. All Auto Tunes LLC. U.S. #63/988,484.
 
 1. Sign up at [goldhold.ai](https://goldhold.ai) (Lite tier is free)
 2. Go to goldhold.ai/account -> GUMP Credentials -> copy your API key
-3. Set the key as an environment variable (recommended):
+3. Set the key as an environment variable:
    - `GOLDHOLD_API_KEY=your-key-here`
-   - On Linux/Mac: add to `~/.bashrc` or `~/.zshrc`
-   - On Windows: use System Environment Variables
-
-**Do not store API keys in plaintext config files.** Use environment variables or your platform's secrets manager.
+   - Use your OS or platform's secure secret storage (e.g. OpenClaw secrets, Docker secrets, or a secrets manager)
+   - Avoid storing keys in shell profiles, plaintext files, or version-controlled code
 
 ## API Basics
 
@@ -121,7 +119,7 @@ SESSION END    -->  POST /v1/session/close  (summary of what happened)
 | CORRECTION | Overrides previous information (corrections outrank facts) |
 | CHECKPOINT | State snapshot at a point in time |
 | IDENTITY | Who you are, your configuration, persona |
-| CREDENTIAL | References to stored credentials (keys stored securely, never in plaintext) |
+| REFERENCE | Pointers to external resources, configs, or service connections |
 | DOCUMENT | Longer-form content, specs, references |
 | RELATION | Links between entities (person X works at company Y) |
 | ASSET_REF | Pointers to external files, URLs, resources |
