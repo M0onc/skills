@@ -1,4 +1,5 @@
 #!/usr/bin/env python3
+# [OC-WM] licensed-to: macmini@MacminideMac-mini | bundle: vendor-suite | ts: 2026-03-09T17:30:16Z
 """
 quad_check.py — 四联校验状态机
 ==============================
@@ -360,7 +361,7 @@ class QuadCheckStateMachine:
             try:
                 result = subprocess.run(
                     ["curl", "-s", "-o", "/dev/null", "-w", "%{http_code}",
-                     "http://127.0.0.1:18789/api/health"],
+                     "http://127.0.0.1:18789/health"],
                     timeout=5, capture_output=True, text=True
                 )
                 gateway_ok = result.stdout.strip() == "200"

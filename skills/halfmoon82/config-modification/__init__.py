@@ -1,3 +1,4 @@
+# [OC-WM] licensed-to: macmini@MacminideMac-mini | bundle: vendor-suite | ts: 2026-03-09T17:30:16Z
 """
 config-modification-v2.3 — 配置修改防护系统
 ==========================================

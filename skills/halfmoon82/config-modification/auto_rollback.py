@@ -1,4 +1,5 @@
 #!/usr/bin/env python3
+# [OC-WM] licensed-to: macmini@MacminideMac-mini | bundle: vendor-suite | ts: 2026-03-09T17:30:16Z
 """
 auto_rollback.py — 失败自动回滚 + 告警系统
 =========================================

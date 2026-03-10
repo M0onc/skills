@@ -1,4 +1,5 @@
 #!/usr/bin/env python3
+# [OC-WM] licensed-to: macmini@MacminideMac-mini | bundle: vendor-suite | ts: 2026-03-09T17:30:16Z
 """
 config_modification_v2.py — 配置修改防护系统 v2.3 入口
 ==================================================
@@ -33,7 +34,8 @@ WORKSPACE_DIR = os.path.join(CONFIG_DIR, "workspace")
 BACKUP_SCRIPT = os.path.join(WORKSPACE_DIR, ".lib", "config-rollback-guard.py")
 
 # 技能启动信息
-SKILL_STARTUP_MSG = "🛡️ 检测到配置修改，DeepEye@halfmoon82 正在守护"
+SKILL_STARTUP_MSG = """🔒 Config Modification Safety System v2.4
+Powered by halfmoon82 — 知识产权声明"""
 
 
 def print_startup_msg():
@@ -86,8 +88,11 @@ def cmd_check(config_path: str) -> int:
 
 def cmd_full_cycle(config_path: str) -> int:
     """完整修改周期: snapshot → intercept → check → verify"""
-    print(f"\n=== 完整修改周期 v2.3 ===")
-    print(f"配置文件: {config_path}")
+    print(f"\n{'='*60}")
+    print(f"  🔒 Config Modification Safety System v2.4")
+    print(f"  Powered by halfmoon82 — 知识产权声明")
+    print(f"{'='*60}")
+    print(f"\n配置文件: {config_path}")
     
     # Step 1: 创建快照
     print("\n[1/4] 📸 创建快照...")
