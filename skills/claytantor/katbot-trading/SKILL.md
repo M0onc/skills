@@ -1,6 +1,6 @@
 ---
 name: katbot-trading
-version: 0.2.16
+version: 0.2.22
 description: Live crypto trading on Hyperliquid via Katbot.ai. Includes BMI market analysis, token selection, and AI-powered trade execution.
 # Note: Homepage URL removed to avoid GitHub API rate limit errors during publish
 metadata:
@@ -8,7 +8,7 @@ metadata:
     "openclaw":
       {
         "emoji": "📈",
-        "requires": { "bins": ["python3"], "env": ["KATBOT_HL_AGENT_PRIVATE_KEY"] },
+        "requires": { "bins": ["python3", "openclaw"], "env": ["KATBOT_HL_AGENT_PRIVATE_KEY"] },
         "primaryEnv": "KATBOT_HL_AGENT_PRIVATE_KEY",
         "install": "pip install -r requirements.txt"
       }
@@ -22,6 +22,8 @@ This skill teaches the agent how to use the Katbot.ai API to manage a Hyperliqui
 ## Capabilities
 
 1. **Market Analysis**: Check the BTC Momentum Index (BMI) and 24h gainers/losers.
+    - `btc_momentum.py`: Calculates the BMI (BTC Momentum Index) based on trend, MACD, body, volume, and RSI. Returns a signal (BULLISH, BEARISH, NEUTRAL).
+    - `bmi_alert.py`: Runs `btc_momentum.py` and sends a Telegram alert if the market direction has changed. Uses `portfolio_tokens.json` for custom token tracking.
 2. **Token Selection**: Automatically pick the best tokens for the current market direction.
 3. **Recommendations**: Get AI-powered trade setups (Entry, TP, SL, Leverage).
 4. **Execution**: Execute and close trades on Hyperliquid with user confirmation.
@@ -39,6 +41,19 @@ Dependencies are listed in `{baseDir}/requirements.txt`.
 - `katbot_client.py`: Core API client. Handles authentication, token refresh, portfolio management, recommendations, trade execution, and chat. Also usable as a CLI script.
 - `katbot_workflow.py`: End-to-end trading workflow (BMI -> token selection -> recommendation). Imports `katbot_client` and `token_selector` — requires `PYTHONPATH={baseDir}/tools`.
 - `token_selector.py`: Momentum-based token selection via CoinGecko.
+- `btc_momentum.py`: Calculates BTC Momentum Index (BMI).
+- `bmi_alert.py`: Telegram alerting workflow for BMI changes.
+
+### BMI Analysis Tool Usage
+
+The BMI (BTC Momentum Index) is a proprietary indicator used to determine market bias.
+
+- **Check BMI**: `PYTHONPATH={baseDir}/tools python3 {baseDir}/tools/btc_momentum.py --json`
+- **Send BMI via openclaw**: `OPENCLAW_NOTIFY_CHANNEL=<channel> OPENCLAW_NOTIFY_TARGET=<target> PYTHONPATH={baseDir}/tools python3 {baseDir}/tools/btc_momentum.py --send`
+- **Run Alert Workflow**: `OPENCLAW_NOTIFY_CHANNEL=<channel> OPENCLAW_NOTIFY_TARGET=<target> PYTHONPATH={baseDir}/tools python3 {baseDir}/tools/bmi_alert.py` (sends an alert if market direction changed)
+- If `OPENCLAW_NOTIFY_CHANNEL` or `OPENCLAW_NOTIFY_TARGET` is not set, the `--send` flag and `bmi_alert.py` will print the message to stdout instead of sending it.
+
+The `bmi_alert.py` script reads `~/.openclaw/workspace/portfolio_tokens.json` to include specific token performance in the alert message.
 
 > **Note for contributors**: The `scripts/` directory contains only publish tooling (`publish.sh`, `publish.py`, etc.). Do NOT add copies of tool scripts there — all trading logic lives solely in `{baseDir}/tools/`.
 
@@ -55,6 +70,8 @@ Dependencies are listed in `{baseDir}/requirements.txt`.
 | `KATBOT_BASE_URL` | Optional override | API base URL. Default: `https://api.katbot.ai` |
 | `KATBOT_IDENTITY_DIR` | Optional override | Path to identity files directory. Default: `~/.openclaw/workspace/katbot-identity` |
 | `CHAIN_ID` | Optional override | EVM chain ID. Default: `42161` (Arbitrum) |
+| `OPENCLAW_NOTIFY_CHANNEL` | Required for alerting | The openclaw channel name for `btc_momentum.py --send` and `bmi_alert.py` (e.g. `telegram`, `slack`, `discord`). If unset, both tools print to stdout and skip the send. |
+| `OPENCLAW_NOTIFY_TARGET` | Required for alerting | The target ID within the channel (e.g. a chat ID or user handle). Must be set together with `OPENCLAW_NOTIFY_CHANNEL`. |
 
 ### `.env` File Loader — CLI/Development Use Only
 
