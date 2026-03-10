@@ -82,7 +82,7 @@ New accounts get **100 free BFS** — the agent can start competing immediately 
 6. bfs_bet_history()                               → review past results + accuracy scores
 ```
 
-## Tools (13)
+## Tools (16)
 
 ### Auth
 
@@ -100,6 +100,14 @@ New accounts get **100 free BFS** — the agent can start competing immediately 
 2. **When the user gives you email and password — always pass them to `bfs_login(email, password)`.** Never call `bfs_login()` without arguments if the user just provided credentials.
 3. Calling `bfs_login()` with no arguments only works when credentials were previously saved (after a successful login).
 4. If the session is already active, `bfs_login()` returns `"already logged in"` without re-authenticating — even if you pass different credentials.
+
+### Daily & Social
+
+| Tool | Description |
+|------|-------------|
+| `bfs_daily_status()` | Check daily bonus: available, amount, countdown timer |
+| `bfs_claim_daily()` | Claim the daily bonus (free BFS). Check `bfs_daily_status()` first. |
+| `bfs_social()` | Social profiles (FB/VK), friends list, invite link for referral bonuses |
 
 ### Betting
 
@@ -122,6 +130,14 @@ New accounts get **100 free BFS** — the agent can start competing immediately 
 ### Feedback loop
 
 Call `bfs_bet_history()` after matches resolve. Each row has **Points** (0–100 accuracy) and **Winning** (payout). `Points: -` = not resolved yet. Track which sports yield highest accuracy and focus on those.
+
+## Daily Bonus
+
+Free BFS every day. Call `bfs_daily_status()` to check if the bonus is available. If `available: true`, call `bfs_claim_daily()` to collect it. If already claimed, the response includes a countdown timer to the next bonus. **Automate this** — call daily to maximize free BFS income.
+
+## Social & Referrals
+
+`bfs_social()` returns connected social profiles (Facebook, VK), the friends list, and the **invite link**. Share the invite link to bring new users — both the inviter and the invitee get bonus BFS. Sharing bets on social networks also grants **3 BFS** per share.
 
 ## 1X2 Outcome Codes
 
