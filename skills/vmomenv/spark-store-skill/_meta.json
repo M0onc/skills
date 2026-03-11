@@ -1,0 +1,11 @@
+{
+  "owner": "vmomenv",
+  "slug": "spark-store-skill",
+  "displayName": "Spark Store Skill",
+  "latest": {
+    "version": "0.1.0",
+    "publishedAt": 1773040525635,
+    "commit": null
+  },
+  "history": []
+}
