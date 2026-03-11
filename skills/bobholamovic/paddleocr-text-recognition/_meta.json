@@ -1,0 +1,11 @@
+{
+  "owner": "bobholamovic",
+  "slug": "paddleocr-text-recognition",
+  "displayName": "PaddleOCR Text Recognition",
+  "latest": {
+    "version": "1.0.1",
+    "publishedAt": 1773137101345,
+    "commit": null
+  },
+  "history": []
+}
