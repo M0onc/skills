@@ -1,0 +1,11 @@
+{
+  "owner": "geolyai",
+  "slug": "geo-metrics-tracker",
+  "displayName": "Geo Metrics Tracker",
+  "latest": {
+    "version": "0.1.0",
+    "publishedAt": 1773037748994,
+    "commit": null
+  },
+  "history": []
+}
