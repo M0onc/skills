@@ -1,0 +1,11 @@
+{
+  "owner": "johnnywang2001",
+  "slug": "jrv-ssl-monitor",
+  "displayName": "SSL Certificate Monitor",
+  "latest": {
+    "version": "1.0.0",
+    "publishedAt": 1773148068730,
+    "commit": null
+  },
+  "history": []
+}
