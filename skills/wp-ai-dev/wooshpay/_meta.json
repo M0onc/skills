@@ -1,0 +1,11 @@
+{
+  "owner": "wp-ai-dev",
+  "slug": "wooshpay",
+  "displayName": "wooshpay-api",
+  "latest": {
+    "version": "1.0.2",
+    "publishedAt": 1773193308891,
+    "commit": null
+  },
+  "history": []
+}
