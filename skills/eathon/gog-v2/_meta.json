@@ -1,0 +1,11 @@
+{
+  "owner": "eathon",
+  "slug": "gog-v2",
+  "displayName": "Gog V2",
+  "latest": {
+    "version": "1.0.0",
+    "publishedAt": 1773234479711,
+    "commit": null
+  },
+  "history": []
+}
