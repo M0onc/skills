@@ -1,0 +1,11 @@
+{
+  "owner": "trip-content-ai",
+  "slug": "tripgenie",
+  "displayName": "TripGenie",
+  "latest": {
+    "version": "0.1.1",
+    "publishedAt": 1773150206986,
+    "commit": null
+  },
+  "history": []
+}
