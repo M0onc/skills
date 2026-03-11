@@ -19,6 +19,9 @@ function saveConfig(config) {
 }
 
 function getKey() {
+  const envKey = (process.env.SKILLBOSS_API_KEY ?? "").trim();
+  if (envKey) return envKey;
+
   const config = loadConfig();
   const key = config.apiKey;
   if (!key || key === "YOUR_API_KEY_HERE" || key.includes("...")) return null;

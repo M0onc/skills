@@ -49,6 +49,9 @@ Examples:
 }
 
 function getApiKey() {
+  const envKey = (process.env.SKILLBOSS_API_KEY ?? "").trim();
+  if (envKey) return envKey;
+
   try {
     const config = JSON.parse(readFileSync(CONFIG_PATH, "utf8"));
     if (config.apiKey && config.apiKey !== "YOUR_API_KEY_HERE" && !config.apiKey.includes("...")) {
@@ -56,7 +59,7 @@ function getApiKey() {
     }
   } catch {}
 
-  console.error("Missing API key. Run: node auth.mjs trial");
+  console.error("Missing SKILLBOSS_API_KEY. Run: node auth.mjs trial");
   process.exit(1);
 }
 
